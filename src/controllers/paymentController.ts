@@ -1,13 +1,18 @@
 import { Response } from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import Tree from '../models/Tree';
 import { AuthRequest } from '../middleware/auth';
 
 const BOX_PRICES: Record<string, number> = {
   chausa: 1299,
   dasheri: 1499,
   langra: 1399,
+};
+
+const PLAN_PRICES: Record<string, number> = {
+  sapling: 2499,
+  adult: 4499,
+  grand: 7999,
 };
 
 function getRazorpay() {
@@ -23,10 +28,10 @@ export async function createOrder(req: AuthRequest, res: Response) {
 
     let amount: number;
     if (type === 'rental') {
-      if (!treeId) return res.status(400).json({ message: 'treeId is required for rental.' });
-      const tree = await Tree.findById(treeId);
-      if (!tree) return res.status(404).json({ message: 'Tree not found.' });
-      amount = tree.price;
+      const plan = req.body.plan || treeId;
+      const price = PLAN_PRICES[plan];
+      if (!price) return res.status(400).json({ message: 'Invalid plan. Use sapling, adult, or grand.' });
+      amount = price;
     } else if (type === 'box') {
       const price = BOX_PRICES[variety];
       if (!price) return res.status(400).json({ message: 'Invalid variety.' });

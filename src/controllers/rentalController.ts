@@ -4,13 +4,13 @@ import { AuthRequest } from '../middleware/auth';
 
 export async function createRental(req: AuthRequest, res: Response) {
   try {
-    const { tree, variety, season, deliveryAddress, razorpayOrderId, paymentId } = req.body;
-    if (!tree || !variety || !deliveryAddress) {
-      return res.status(400).json({ message: 'tree, variety, and deliveryAddress are required.' });
+    const { plan, variety, season, deliveryAddress, razorpayOrderId, paymentId } = req.body;
+    if (!plan || !variety || !deliveryAddress) {
+      return res.status(400).json({ message: 'plan, variety, and deliveryAddress are required.' });
     }
     const rental = await Rental.create({
       user: req.user!._id,
-      tree,
+      plan,
       variety,
       season: season || String(new Date().getFullYear()),
       deliveryAddress,
@@ -27,9 +27,7 @@ export async function createRental(req: AuthRequest, res: Response) {
 
 export async function getMyRentals(req: AuthRequest, res: Response) {
   try {
-    const rentals = await Rental.find({ user: req.user!._id })
-      .populate('tree')
-      .sort({ createdAt: -1 });
+    const rentals = await Rental.find({ user: req.user!._id }).sort({ createdAt: -1 });
     res.json(rentals);
   } catch (err) {
     console.error('[getMyRentals]', err);
