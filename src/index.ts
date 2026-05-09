@@ -20,8 +20,9 @@ const app = express();
 app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
 const allowedOrigins = [
-  'http://localhost:5173',
   'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
   'https://yourorchard.in',
   'https://www.yourorchard.in',
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
