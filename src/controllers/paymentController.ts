@@ -10,9 +10,9 @@ const BOX_PRICES: Record<string, number> = {
 };
 
 const PLAN_PRICES: Record<string, number> = {
-  sapling: 2499,
-  adult: 4499,
-  grand: 7999,
+  sapling: 799,
+  adult: 1499,
+  grand: 2499,
 };
 
 function getRazorpay() {
@@ -36,8 +36,16 @@ export async function createOrder(req: AuthRequest, res: Response) {
       const price = BOX_PRICES[variety];
       if (!price) return res.status(400).json({ message: 'Invalid variety.' });
       amount = price * Number(quantity);
+    } else if (type === 'cart') {
+      const items: { variety: string; quantity: number }[] = req.body.items || [];
+      if (!items.length) return res.status(400).json({ message: 'Cart is empty.' });
+      amount = items.reduce((sum, item) => {
+        const price = BOX_PRICES[item.variety];
+        if (!price) throw new Error(`Invalid variety: ${item.variety}`);
+        return sum + price * Number(item.quantity);
+      }, 0);
     } else {
-      return res.status(400).json({ message: 'type must be "rental" or "box".' });
+      return res.status(400).json({ message: 'type must be "rental", "box", or "cart".' });
     }
 
     const razorpay = getRazorpay();
