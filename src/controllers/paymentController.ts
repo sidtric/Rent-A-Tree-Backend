@@ -37,10 +37,15 @@ export async function createOrder(req: AuthRequest, res: Response) {
       if (!price) return res.status(400).json({ message: 'Invalid variety.' });
       amount = price * Number(quantity);
     } else if (type === 'cart') {
-      const items: { variety: string; quantity: number }[] = req.body.items || [];
+      const items: { variety?: string; plan?: string; quantity: number }[] = req.body.items || [];
       if (!items.length) return res.status(400).json({ message: 'Cart is empty.' });
       amount = items.reduce((sum, item) => {
-        const price = BOX_PRICES[item.variety];
+        if (item.plan) {
+          const price = PLAN_PRICES[item.plan];
+          if (!price) throw new Error(`Invalid plan: ${item.plan}`);
+          return sum + price * Number(item.quantity);
+        }
+        const price = BOX_PRICES[item.variety!];
         if (!price) throw new Error(`Invalid variety: ${item.variety}`);
         return sum + price * Number(item.quantity);
       }, 0);
