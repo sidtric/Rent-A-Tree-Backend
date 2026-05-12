@@ -1,12 +1,21 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+export interface IDeliveryAddress {
+  flat: string;
+  street: string;
+  city: string;
+  state: string;
+  pincode: string;
+}
+
 export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
   phone?: string;
   role: 'user' | 'admin';
+  deliveryAddress?: IDeliveryAddress;
   comparePassword(plain: string): Promise<boolean>;
 }
 
@@ -16,6 +25,13 @@ const schema = new Schema<IUser>({
   password: { type: String, required: true },
   phone: String,
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  deliveryAddress: {
+    flat:    String,
+    street:  String,
+    city:    String,
+    state:   String,
+    pincode: String,
+  },
 }, { timestamps: true });
 
 schema.pre('save', async function () {

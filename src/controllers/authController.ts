@@ -50,3 +50,22 @@ export async function login(req: Request, res: Response) {
 export async function getMe(req: AuthRequest, res: Response) {
   res.json(req.user);
 }
+
+export async function updateProfile(req: AuthRequest, res: Response) {
+  try {
+    const { phone, deliveryAddress } = req.body;
+    const update: Record<string, unknown> = {};
+    if (phone !== undefined) update.phone = phone;
+    if (deliveryAddress) update.deliveryAddress = deliveryAddress;
+
+    const user = await User.findByIdAndUpdate(
+      req.user!._id,
+      { $set: update },
+      { new: true, select: '-password' }
+    );
+    res.json(user);
+  } catch (err) {
+    console.error('[updateProfile]', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+}
