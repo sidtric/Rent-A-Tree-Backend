@@ -63,7 +63,7 @@ export async function createOrder(req: AuthRequest, res: Response) {
     });
   } catch (err) {
     console.error('[createOrder]', err);
-    res.status(500).json({ message: 'Payment error.', debug: String(err) });
+    res.status(500).json({ message: 'Payment error.' });
   }
 }
 
