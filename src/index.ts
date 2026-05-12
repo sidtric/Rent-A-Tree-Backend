@@ -14,6 +14,7 @@ import paymentRoutes from './routes/payments';
 import reviewRoutes from './routes/reviews';
 import publicUpdateRoutes from './routes/publicUpdates';
 import contactRoutes from './routes/contact';
+import adminRoutes from './admin/routes/admin';
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/public-updates', publicUpdateRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 app.use((_req, res) => res.status(404).json({ message: 'Not found.' }));
