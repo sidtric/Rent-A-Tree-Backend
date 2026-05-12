@@ -3,11 +3,11 @@ import ContactMessage from '../models/ContactMessage';
 
 export async function submitContact(req: Request, res: Response) {
   try {
-    const { name, email, message } = req.body;
+    const { name, email, message, type } = req.body;
     if (!name?.trim() || !email?.trim() || !message?.trim()) {
       return res.status(400).json({ message: 'All fields are required.' });
     }
-    await ContactMessage.create({ name, email, message });
+    await ContactMessage.create({ name, email, message, type: type === 'notify' ? 'notify' : 'contact' });
     res.status(201).json({ message: 'Message received! We will get back to you soon.' });
   } catch (err) {
     console.error('[submitContact]', err);
