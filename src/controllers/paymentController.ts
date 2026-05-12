@@ -2,6 +2,7 @@ import { Response } from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { AuthRequest } from '../middleware/auth';
+import PendingOrder from '../models/PendingOrder';
 
 const BOX_PRICES: Record<string, number> = {
   chausa: 1299,
@@ -24,7 +25,7 @@ function getRazorpay() {
 
 export async function createOrder(req: AuthRequest, res: Response) {
   try {
-    const { type, treeId, variety, quantity = 1 } = req.body;
+    const { type, treeId, variety, quantity = 1, meta } = req.body;
 
     let amount: number;
     if (type === 'rental') {
@@ -59,6 +60,18 @@ export async function createOrder(req: AuthRequest, res: Response) {
       currency: 'INR',
       receipt: `rcpt_${Date.now()}`,
     });
+
+    if (meta && req.user) {
+      await PendingOrder.create({
+        razorpayOrderId: order.id,
+        userId:          req.user._id,
+        userName:        meta.userName  || req.user.name,
+        userEmail:       meta.userEmail || req.user.email,
+        userPhone:       meta.userPhone || '',
+        deliveryAddress: meta.deliveryAddress || '',
+        items:           meta.richItems || [],
+      }).catch(() => {});
+    }
 
     res.json({
       orderId: order.id,

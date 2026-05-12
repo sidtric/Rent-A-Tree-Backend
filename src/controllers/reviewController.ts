@@ -18,6 +18,10 @@ export async function createReview(req: AuthRequest, res: Response) {
     if (!rating || !comment) {
       return res.status(400).json({ message: 'rating and comment are required.' });
     }
+    const existing = await Review.countDocuments({ user: req.user!._id });
+    if (existing >= 3) {
+      return res.status(400).json({ message: 'You can post a maximum of 3 reviews.' });
+    }
     const files = (req.files as Express.Multer.File[]) || [];
     const media = files.map(f => ({
       url: (f as any).path,

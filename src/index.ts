@@ -15,10 +15,14 @@ import reviewRoutes from './routes/reviews';
 import publicUpdateRoutes from './routes/publicUpdates';
 import contactRoutes from './routes/contact';
 import adminRoutes from './admin/routes/admin';
+import webhookRoutes from './routes/webhook';
 
 const app = express();
 
 app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+// Webhook needs raw body for signature verification — mount before express.json()
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }), webhookRoutes);
 
 const allowedOrigins = [
   'http://localhost:3000',

@@ -1,10 +1,15 @@
 import { Response } from 'express';
 import Rental from '../models/Rental';
 import { AuthRequest } from '../middleware/auth';
+import { verifyPaymentSignature } from '../utils/verifyRazorpay';
+import { sendMail, customerOrderHtml, notifyOwnerNewOrder } from '../utils/mailer';
+
+const PLAN_PRICES: Record<string, number> = { sapling: 799, adult: 1499, grand: 2499 };
+const PLAN_LABELS: Record<string, string> = { sapling: 'Sapling Tree', adult: 'Adult Tree', grand: 'Grand Tree' };
 
 export async function createRental(req: AuthRequest, res: Response) {
   try {
-    const { plan, variety, season, deliveryAddress, razorpayOrderId, paymentId } = req.body;
+    const { plan, variety, season, deliveryAddress, razorpayOrderId, paymentId, razorpaySignature } = req.body;
     if (!plan || !variety || !deliveryAddress) {
       return res.status(400).json({ message: 'plan, variety, and deliveryAddress are required.' });
     }
@@ -16,6 +21,11 @@ export async function createRental(req: AuthRequest, res: Response) {
     if (!VALID_VARIETIES.includes(variety)) {
       return res.status(400).json({ message: 'Invalid variety. Use chausa, dasheri, or langra.' });
     }
+    if (razorpayOrderId && paymentId && razorpaySignature) {
+      if (!verifyPaymentSignature(razorpayOrderId, paymentId, razorpaySignature)) {
+        return res.status(400).json({ message: 'Invalid payment signature.' });
+      }
+    }
     const rental = await Rental.create({
       user: req.user!._id,
       plan,
@@ -26,6 +36,26 @@ export async function createRental(req: AuthRequest, res: Response) {
       paymentId,
       status: 'active',
     });
+
+    const price = PLAN_PRICES[plan] || 0;
+    const label = `${PLAN_LABELS[plan] || plan} (${variety})`;
+    Promise.all([
+      sendMail(req.user!.email, 'Your Tree Rental is Confirmed! 🌳', customerOrderHtml({
+        customerName: req.user!.name,
+        items: [{ label, qty: 1, price }],
+        total: price,
+        deliveryAddress,
+      })),
+      notifyOwnerNewOrder({
+        customerName: req.user!.name,
+        customerEmail: req.user!.email,
+        items: label,
+        total: price,
+        deliveryAddress,
+        type: 'rental',
+      }),
+    ]).catch(err => console.error('[mailer]', err));
+
     res.status(201).json(rental);
   } catch (err) {
     console.error('[createRental]', err);
