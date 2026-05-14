@@ -50,25 +50,22 @@ export async function confirmOrder(req: AuthRequest, res: Response) {
       totalAmount += lineTotal;
 
       if (item.type === 'tree') {
-        // Find-or-create pattern for idempotency
-        let rental = await Rental.findOne({
-          razorpayOrderId,
-          plan: item.plan,
-          variety: item.variety,
-          user: req.user!._id,
-        });
-        if (!rental) {
-          rental = await Rental.create({
-            user: req.user!._id,
-            plan: item.plan,
-            variety: item.variety,
-            season,
-            deliveryAddress: addrFull,
-            razorpayOrderId,
-            paymentId: razorpayPaymentId,
-            status: 'active',
-          });
-        }
+        // Create one Rental per unit (idempotency lives at MasterOrder level)
+        const existingRentals = await Rental.find({ razorpayOrderId, plan: item.plan, variety: item.variety, user: req.user!._id });
+        const toCreate = item.quantity - existingRentals.length;
+        const newRentals = toCreate > 0
+          ? await Promise.all(Array.from({ length: toCreate }, () => Rental.create({
+              user: req.user!._id,
+              plan: item.plan,
+              variety: item.variety,
+              season,
+              deliveryAddress: addrFull,
+              razorpayOrderId,
+              paymentId: razorpayPaymentId,
+              status: 'active',
+            })))
+          : [];
+        const firstRentalId = existingRentals[0]?._id ?? newRentals[0]?._id;
         masterItems.push({
           type: 'tree',
           plan: item.plan,
@@ -77,7 +74,7 @@ export async function confirmOrder(req: AuthRequest, res: Response) {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           lineTotal,
-          refId: rental._id as any,
+          refId: firstRentalId as any,
           refModel: 'Rental',
         });
       } else {
