@@ -55,6 +55,68 @@ export function customerOrderHtml(params: {
 </div>`;
 }
 
+export function rentalStatusHtml(params: { customerName: string; plan: string; variety: string; status: string; deliveryAddress: string }) {
+  const messages: Record<string, { headline: string; body: string }> = {
+    completed: {
+      headline: 'Your Season is Complete! 🥭',
+      body: `Your <strong>${params.plan} (${params.variety})</strong> tree has had a great season. Your mangoes are being harvested and will be dispatched to your delivery address shortly. Thank you for being part of YourOrchard!`,
+    },
+    cancelled: {
+      headline: 'Rental Cancelled',
+      body: `Your <strong>${params.plan} (${params.variety})</strong> tree rental has been cancelled. If you have any questions or need assistance, please reach out to us.`,
+    },
+  };
+  const m = messages[params.status] || { headline: `Rental Update: ${params.status}`, body: `Your rental status has been updated to <strong>${params.status}</strong>.` };
+
+  return `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#111">
+  <div style="background:#2d5a27;padding:32px 24px;text-align:center;border-radius:12px 12px 0 0">
+    <h1 style="color:#fff;margin:0;font-size:22px">${m.headline}</h1>
+  </div>
+  <div style="padding:32px 24px;background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px">
+    <p style="margin:0 0 16px">Hi <strong>${params.customerName}</strong>,</p>
+    <p style="margin:0 0 24px;color:#374151">${m.body}</p>
+    <div style="background:#f6f9f5;border-radius:8px;padding:16px;margin-bottom:24px">
+      <p style="margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px">Delivery Address</p>
+      <p style="margin:0;color:#374151">${params.deliveryAddress}</p>
+    </div>
+    <p style="margin:0;color:#6b7280;font-size:13px">Questions? Reply to this email or contact us at yourorchard.in.</p>
+  </div>
+</div>`;
+}
+
+export function orderStatusHtml(params: { customerName: string; variety: string; quantity: number; status: string; deliveryAddress: string }) {
+  const messages: Record<string, { headline: string; body: string }> = {
+    dispatched: {
+      headline: 'Your Mango Box is On Its Way! 🥭',
+      body: `Your <strong>${params.quantity} × ${params.variety} mango box</strong> has been dispatched and is on its way to you. Expect delivery in the next 2–3 days.`,
+    },
+    delivered: {
+      headline: 'Delivered — Enjoy Your Mangoes! 🌿',
+      body: `Your <strong>${params.quantity} × ${params.variety} mango box</strong> has been delivered. We hope you enjoy every bite! Leave us a review — it means a lot to the team.`,
+    },
+    cancelled: {
+      headline: 'Order Cancelled',
+      body: `Your <strong>${params.quantity} × ${params.variety} mango box</strong> order has been cancelled. If you have questions, please reach out to us.`,
+    },
+  };
+  const m = messages[params.status] || { headline: `Order Update: ${params.status}`, body: `Your order status has been updated to <strong>${params.status}</strong>.` };
+
+  return `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#111">
+  <div style="background:#2d5a27;padding:32px 24px;text-align:center;border-radius:12px 12px 0 0">
+    <h1 style="color:#fff;margin:0;font-size:22px">${m.headline}</h1>
+  </div>
+  <div style="padding:32px 24px;background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px">
+    <p style="margin:0 0 16px">Hi <strong>${params.customerName}</strong>,</p>
+    <p style="margin:0 0 24px;color:#374151">${m.body}</p>
+    <div style="background:#f6f9f5;border-radius:8px;padding:16px;margin-bottom:24px">
+      <p style="margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px">Delivery Address</p>
+      <p style="margin:0;color:#374151">${params.deliveryAddress}</p>
+    </div>
+    <p style="margin:0;color:#6b7280;font-size:13px">Questions? Reply to this email or contact us at yourorchard.in.</p>
+  </div>
+</div>`;
+}
+
 export async function notifyOwnerNewOrder(params: {
   customerName: string;
   customerEmail: string;

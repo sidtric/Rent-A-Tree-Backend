@@ -9,3 +9,15 @@ export const PLAN_PRICES: Record<string, number> = {
   adult:   1499,
   grand:   2499,
 };
+
+export const PLAN_FULL_PRICES: Record<string, number> = {
+  sapling: 4499,
+  adult:   6999,
+  grand:   9999,
+};
+
+export const PLAN_LABELS: Record<string, string> = {
+  sapling: 'Sapling Tree',
+  adult:   'Adult Tree',
+  grand:   'Grand Tree',
+};

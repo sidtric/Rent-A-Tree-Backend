@@ -10,6 +10,8 @@ export interface IRental extends Document {
   status: 'pending_payment' | 'active' | 'completed' | 'cancelled';
   razorpayOrderId?: string;
   paymentId?: string;
+  balancePaid: boolean;
+  balancePaymentId?: string;
 }
 
 const schema = new Schema<IRental>({
@@ -26,6 +28,8 @@ const schema = new Schema<IRental>({
   },
   razorpayOrderId: String,
   paymentId: String,
+  balancePaid:      { type: Boolean, default: false },
+  balancePaymentId: String,
 }, { timestamps: true });
 
 export default mongoose.model<IRental>('Rental', schema);

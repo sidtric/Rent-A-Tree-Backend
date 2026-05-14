@@ -3,7 +3,8 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { AuthRequest } from '../middleware/auth';
 import PendingOrder from '../models/PendingOrder';
-import { BOX_PRICES, PLAN_PRICES } from '../constants/prices';
+import { BOX_PRICES, PLAN_PRICES, PLAN_FULL_PRICES } from '../constants/prices';
+import Rental from '../models/Rental';
 
 function getRazorpay() {
   return new Razorpay({
@@ -39,8 +40,16 @@ export async function createOrder(req: AuthRequest, res: Response) {
         if (!price) throw new Error(`Invalid variety: ${item.variety}`);
         return sum + price * Number(item.quantity);
       }, 0);
+    } else if (type === 'balance') {
+      const rental = await Rental.findOne({ _id: req.body.rentalId, user: req.user!._id });
+      if (!rental) return res.status(404).json({ message: 'Rental not found.' });
+      if (rental.balancePaid) return res.status(400).json({ message: 'Balance already paid.' });
+      const full = PLAN_FULL_PRICES[rental.plan];
+      const token = PLAN_PRICES[rental.plan];
+      if (!full || !token) return res.status(400).json({ message: 'Invalid rental plan.' });
+      amount = full - token;
     } else {
-      return res.status(400).json({ message: 'type must be "rental", "box", or "cart".' });
+      return res.status(400).json({ message: 'type must be "rental", "box", "cart", or "balance".' });
     }
 
     const razorpay = getRazorpay();

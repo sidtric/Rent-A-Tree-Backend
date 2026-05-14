@@ -3,9 +3,7 @@ import Rental from '../models/Rental';
 import { AuthRequest } from '../middleware/auth';
 import { verifyPaymentSignature } from '../utils/verifyRazorpay';
 import { sendMail, customerOrderHtml, notifyOwnerNewOrder } from '../utils/mailer';
-import { PLAN_PRICES } from '../constants/prices';
-
-const PLAN_LABELS: Record<string, string> = { sapling: 'Sapling Tree', adult: 'Adult Tree', grand: 'Grand Tree' };
+import { PLAN_PRICES, PLAN_FULL_PRICES, PLAN_LABELS } from '../constants/prices';
 
 export async function createRental(req: AuthRequest, res: Response) {
   try {
@@ -100,6 +98,40 @@ export async function cancelRental(req: AuthRequest, res: Response) {
     res.json(rental);
   } catch (err) {
     console.error('[cancelRental]', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+}
+
+export async function payBalance(req: AuthRequest, res: Response) {
+  try {
+    const { razorpayOrderId, paymentId, razorpaySignature } = req.body;
+    if (!razorpayOrderId || !paymentId || !razorpaySignature) {
+      return res.status(400).json({ message: 'Missing payment fields.' });
+    }
+    if (!verifyPaymentSignature(razorpayOrderId, paymentId, razorpaySignature)) {
+      return res.status(400).json({ message: 'Invalid payment signature.' });
+    }
+    const rental = await Rental.findOneAndUpdate(
+      { _id: req.params.id, user: req.user!._id, balancePaid: false, status: 'active' },
+      { balancePaid: true, balancePaymentId: paymentId },
+      { new: true },
+    );
+    if (!rental) return res.status(404).json({ message: 'Rental not found or balance already paid.' });
+
+    const fullPrice = PLAN_FULL_PRICES[rental.plan] || 0;
+    const token     = PLAN_PRICES[rental.plan] || 0;
+    const balance   = fullPrice - token;
+    const label     = `${PLAN_LABELS[rental.plan] || rental.plan} (${rental.variety}) — balance payment`;
+    sendMail(req.user!.email, 'Balance Payment Received — YourOrchard 🌳', customerOrderHtml({
+      customerName: req.user!.name,
+      items: [{ label, qty: 1, price: balance }],
+      total: balance,
+      deliveryAddress: rental.deliveryAddress,
+    })).catch(err => console.error('[mailer]', err));
+
+    res.json(rental);
+  } catch (err) {
+    console.error('[payBalance]', err);
     res.status(500).json({ message: 'Server error.' });
   }
 }

@@ -1,8 +1,10 @@
 import { Response } from 'express';
 import BoxOrder from '../../models/BoxOrder';
 import { AuthRequest } from '../../middleware/auth';
+import { sendMail, orderStatusHtml } from '../../utils/mailer';
 
 const VALID_STATUSES = ['pending_payment', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
+const EMAIL_STATUSES = new Set(['dispatched', 'delivered', 'cancelled']);
 
 export async function adminGetAllOrders(_req: AuthRequest, res: Response) {
   try {
@@ -28,6 +30,18 @@ export async function adminUpdateOrderStatus(req: AuthRequest, res: Response) {
       { new: true }
     ).populate('user', 'name email');
     if (!order) return res.status(404).json({ message: 'Order not found.' });
+
+    const u = order.user as any;
+    if (EMAIL_STATUSES.has(status) && u?.email) {
+      sendMail(u.email, `Your Mango Box Update — YourOrchard`, orderStatusHtml({
+        customerName:    u.name || 'Valued Customer',
+        variety:         order.variety,
+        quantity:        order.quantity,
+        status,
+        deliveryAddress: order.deliveryAddress,
+      })).catch(err => console.error('[mailer]', err));
+    }
+
     res.json(order);
   } catch (err) {
     console.error('[adminUpdateOrderStatus]', err);
