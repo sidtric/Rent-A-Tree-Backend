@@ -5,13 +5,13 @@ export const BOX_PRICES: Record<string, number> = {
 };
 
 export const PLAN_PRICES: Record<string, number> = {
-  sapling: 799,
+  sapling: 1,      // TEST — restore to 799
   adult:   1499,
   grand:   2499,
 };
 
 export const PLAN_FULL_PRICES: Record<string, number> = {
-  sapling: 4499,
+  sapling: 2,      // TEST — restore to 4499
   adult:   6999,
   grand:   9999,
 };
