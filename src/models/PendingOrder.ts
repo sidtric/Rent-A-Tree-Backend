@@ -5,6 +5,7 @@ export interface IRichItem {
   plan?: string;
   variety: string;
   qty: number;
+  unitPrice?: number;
 }
 
 export interface IPendingOrder extends Document {
@@ -14,7 +15,11 @@ export interface IPendingOrder extends Document {
   userEmail: string;
   userPhone: string;
   deliveryAddress: string;
+  deliveryAddressStructured?: {
+    flat: string; street: string; city: string; state: string; pincode: string;
+  };
   items: IRichItem[];
+  notes?: string;
   status: 'pending' | 'fulfilled';
 }
 
@@ -25,8 +30,18 @@ const schema = new Schema<IPendingOrder>({
   userEmail:       { type: String, required: true },
   userPhone:       { type: String, default: '' },
   deliveryAddress: { type: String, required: true },
-  items:           [{ type: { type: String }, plan: String, variety: String, qty: Number }],
-  status:          { type: String, enum: ['pending', 'fulfilled'], default: 'pending' },
+  deliveryAddressStructured: {
+    flat: String, street: String, city: String, state: String, pincode: String,
+  },
+  items: [{
+    type:       { type: String },
+    plan:       String,
+    variety:    String,
+    qty:        Number,
+    unitPrice:  Number,
+  }],
+  notes:  { type: String, default: '' },
+  status: { type: String, enum: ['pending', 'fulfilled'], default: 'pending' },
 }, { timestamps: true });
 
 export default mongoose.model<IPendingOrder>('PendingOrder', schema);

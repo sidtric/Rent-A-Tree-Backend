@@ -88,14 +88,16 @@ export async function handleWebhook(req: Request, res: Response) {
             for (let i = 0; i < item.qty; i++) {
               const r = results[resultIdx++];
               const rental = r.status === 'fulfilled' ? r.value : null;
-              const unitPrice = 0; // price not stored in PendingOrder items
+              const unitPrice = item.unitPrice || BOX_PRICES[item.variety] || 0;
+              const lineTotal = unitPrice;
+              totalAmount += lineTotal;
               masterItems.push({
                 type: 'tree',
                 plan: item.plan,
                 variety: item.variety,
                 quantity: 1,
                 unitPrice,
-                lineTotal: unitPrice,
+                lineTotal,
                 refId: rental?._id,
                 refModel: 'Rental',
               });
@@ -103,7 +105,7 @@ export async function handleWebhook(req: Request, res: Response) {
           } else {
             const r = results[resultIdx++];
             const boxOrder = r.status === 'fulfilled' ? r.value : null;
-            const pricePerBox = BOX_PRICES[item.variety] || 0;
+            const pricePerBox = item.unitPrice || BOX_PRICES[item.variety] || 0;
             const lineTotal = pricePerBox * item.qty;
             totalAmount += lineTotal;
             masterItems.push({
@@ -119,6 +121,7 @@ export async function handleWebhook(req: Request, res: Response) {
         }
 
         const orderNumber = generateOrderNumber();
+        const s = pending.deliveryAddressStructured;
         const deliveryFull = pending.deliveryAddress;
         await MasterOrder.create({
           orderNumber,
@@ -127,14 +130,21 @@ export async function handleWebhook(req: Request, res: Response) {
           razorpayPaymentId: paymentId,
           razorpaySignature: '',
           buyer: { name: pending.userName, email: pending.userEmail, phone: pending.userPhone },
-          deliveryAddress: { flat: '', street: '', city: '', state: '', pincode: '', full: deliveryFull },
+          deliveryAddress: {
+            flat:    s?.flat    || '',
+            street:  s?.street  || '',
+            city:    s?.city    || '',
+            state:   s?.state   || '',
+            pincode: s?.pincode || '',
+            full:    deliveryFull,
+          },
           items: masterItems,
           subtotal: totalAmount,
           totalAmount,
           currency: 'INR',
           season,
           status: 'confirmed',
-          notes: '',
+          notes: pending.notes || '',
         });
         console.log(`[webhook] created MasterOrder ${orderNumber} for recovered order ${razorpayOrderId}`);
       }

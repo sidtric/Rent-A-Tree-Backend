@@ -61,13 +61,15 @@ export async function createOrder(req: AuthRequest, res: Response) {
 
     if (meta && req.user) {
       await PendingOrder.create({
-        razorpayOrderId: order.id,
-        userId:          req.user._id,
-        userName:        meta.userName  || req.user.name,
-        userEmail:       meta.userEmail || req.user.email,
-        userPhone:       meta.userPhone || '',
-        deliveryAddress: meta.deliveryAddress || '',
-        items:           meta.richItems || [],
+        razorpayOrderId:            order.id,
+        userId:                     req.user._id,
+        userName:                   meta.userName  || req.user.name,
+        userEmail:                  meta.userEmail || req.user.email,
+        userPhone:                  meta.userPhone || '',
+        deliveryAddress:            meta.deliveryAddress || '',
+        deliveryAddressStructured:  meta.deliveryAddressStructured || undefined,
+        items:                      meta.richItems || [],
+        notes:                      meta.notes || '',
       }).catch(() => {});
     }
 
@@ -99,11 +101,8 @@ export async function verifyPayment(req: AuthRequest, res: Response) {
       return res.status(400).json({ message: 'Invalid payment signature.' });
     }
 
-    PendingOrder.findOneAndUpdate(
-      { razorpayOrderId, status: 'pending' },
-      { $set: { status: 'fulfilled' } },
-    ).catch(() => {});
-
+    // PendingOrder is marked fulfilled by confirmOrder — not here.
+    // Marking it here would block webhook recovery if confirmOrder fails.
     res.json({ success: true, paymentId: razorpayPaymentId, orderId: razorpayOrderId });
   } catch (err) {
     console.error('[verifyPayment]', err);
