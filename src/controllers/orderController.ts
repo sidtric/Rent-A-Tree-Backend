@@ -18,12 +18,18 @@ export async function createOrder(req: AuthRequest, res: Response) {
     if (!deliveryAddress || !phone) {
       return res.status(400).json({ message: 'deliveryAddress and phone are required.' });
     }
+    if (typeof deliveryAddress !== 'string' || deliveryAddress.trim().length < 10) {
+      return res.status(400).json({ message: 'Please enter a complete delivery address (at least 10 characters).' });
+    }
     if (razorpayOrderId && paymentId && razorpaySignature) {
       if (!verifyPaymentSignature(razorpayOrderId, paymentId, razorpaySignature)) {
         return res.status(400).json({ message: 'Invalid payment signature.' });
       }
     }
     const qty = Number(quantity);
+    if (!Number.isInteger(qty) || qty < 1) {
+      return res.status(400).json({ message: 'Quantity must be a positive whole number.' });
+    }
     const order = await BoxOrder.create({
       user: req.user!._id,
       variety,

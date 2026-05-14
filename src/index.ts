@@ -16,6 +16,7 @@ import publicUpdateRoutes from './routes/publicUpdates';
 import contactRoutes from './routes/contact';
 import adminRoutes from './admin/routes/admin';
 import webhookRoutes from './routes/webhook';
+import settingsRoutes from './routes/settings';
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/public-updates', publicUpdateRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.get('/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 app.use((_req, res) => res.status(404).json({ message: 'Not found.' }));

@@ -13,6 +13,9 @@ export async function createRental(req: AuthRequest, res: Response) {
     if (!plan || !variety || !deliveryAddress) {
       return res.status(400).json({ message: 'plan, variety, and deliveryAddress are required.' });
     }
+    if (typeof deliveryAddress !== 'string' || deliveryAddress.trim().length < 10) {
+      return res.status(400).json({ message: 'Please enter a complete delivery address (at least 10 characters).' });
+    }
     const VALID_PLANS = ['sapling', 'adult', 'grand'];
     const VALID_VARIETIES = ['chausa', 'dasheri', 'langra'];
     if (!VALID_PLANS.includes(plan)) {

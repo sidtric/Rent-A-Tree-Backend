@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { protect, adminOnly } from '../../middleware/auth';
+import { uploadHeroMedia } from '../../middleware/upload';
 
 import { adminGetAllTrees, adminUpdateTree, adminDeleteTree } from '../controllers/trees.admin';
 import { adminGetAllRentals, adminUpdateRentalStatus } from '../controllers/rentals.admin';
@@ -8,6 +9,7 @@ import { adminGetAllReviews, adminDeleteReview } from '../controllers/reviews.ad
 import { adminGetAllUsers, adminSearchUsers, adminUpdateUserRole } from '../controllers/users.admin';
 import { adminGetStats, adminGetPayments } from '../controllers/stats.admin';
 import { adminGetMessages, adminDeleteMessage, adminGetPublicUpdates, adminDeletePublicUpdate } from '../controllers/content.admin';
+import { adminGetSettings, adminUploadHeroMedia, adminDeleteHeroMedia, adminUploadFarmHeroMedia, adminDeleteFarmHeroMedia } from '../controllers/settings.admin';
 
 const router = Router();
 router.use(protect, adminOnly);
@@ -47,5 +49,12 @@ router.delete('/messages/:id',            adminDeleteMessage);
 // Public updates
 router.get('/public-updates',             adminGetPublicUpdates);
 router.delete('/public-updates/:id',      adminDeletePublicUpdate);
+
+// Site settings
+router.get('/settings',                                                          adminGetSettings);
+router.post('/settings/hero-media',      uploadHeroMedia.array('media', 50),    adminUploadHeroMedia);
+router.delete('/settings/hero-media/:index',                                     adminDeleteHeroMedia);
+router.post('/settings/farm-hero-media', uploadHeroMedia.array('media', 50),    adminUploadFarmHeroMedia);
+router.delete('/settings/farm-hero-media/:index',                                adminDeleteFarmHeroMedia);
 
 export default router;
