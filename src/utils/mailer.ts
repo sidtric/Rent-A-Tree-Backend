@@ -236,6 +236,204 @@ export function orderStatusHtml(params: { customerName: string; variety: string;
 </div>`;
 }
 
+export function masterOrderConfirmationEmail(params: {
+  orderNumber: string;
+  buyer: { name: string; email: string; phone: string };
+  deliveryAddress: { full: string };
+  items: Array<{ type: string; plan?: string; variety: string; quantity: number; unitPrice: number; lineTotal: number }>;
+  totalAmount: number;
+  season: string;
+  notes?: string;
+  hasTree: boolean;
+  hasBox: boolean;
+}) {
+  const rows = params.items.map(i => {
+    const label = i.type === 'tree'
+      ? `${i.variety.charAt(0).toUpperCase() + i.variety.slice(1)} ${i.plan ? i.plan.charAt(0).toUpperCase() + i.plan.slice(1) : ''} Tree Rental (Token)`
+      : `${i.variety.charAt(0).toUpperCase() + i.variety.slice(1)} Mango Box`;
+    return `<tr>
+      <td style="padding:10px 14px;border-bottom:1px solid #f0f4ee;font-size:14px;color:#374151">${label}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #f0f4ee;text-align:center;font-size:14px;color:#374151">${i.quantity}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #f0f4ee;text-align:right;font-size:14px;color:#374151">₹${i.unitPrice.toLocaleString('en-IN')}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #f0f4ee;text-align:right;font-size:14px;color:#374151;font-weight:600">₹${i.lineTotal.toLocaleString('en-IN')}</td>
+    </tr>`;
+  }).join('');
+
+  const treeSteps = params.hasTree ? `
+    <tr>
+      <td style="padding:8px 0;vertical-align:top;width:32px;font-size:20px;">🌳</td>
+      <td style="padding:8px 0;vertical-align:top;">
+        <p style="margin:0;font-size:13.5px;font-weight:700;color:#111;">Your tree is tagged</p>
+        <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">Our orchardists in Ramnagar have set aside your tree for this season.</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px 0;vertical-align:top;font-size:20px;">💳</td>
+      <td style="padding:8px 0;vertical-align:top;">
+        <p style="margin:0;font-size:13.5px;font-weight:700;color:#111;">Pay the balance within 7 days</p>
+        <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">Log in to your dashboard and click "Pay Balance" to secure your slot.</p>
+      </td>
+    </tr>` : '';
+
+  const boxSteps = params.hasBox ? `
+    <tr>
+      <td style="padding:8px 0;vertical-align:top;font-size:20px;">📦</td>
+      <td style="padding:8px 0;vertical-align:top;">
+        <p style="margin:0;font-size:13.5px;font-weight:700;color:#111;">Mango box confirmed</p>
+        <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">We'll pack and dispatch your box fresh from the orchard on harvest day.</p>
+      </td>
+    </tr>` : '';
+
+  const harvestStep = `
+    <tr>
+      <td style="padding:8px 0;vertical-align:top;font-size:20px;">🥭</td>
+      <td style="padding:8px 0;vertical-align:top;">
+        <p style="margin:0;font-size:13.5px;font-weight:700;color:#111;">Harvest delivered to your door</p>
+        <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">Fresh Ramnagar mangoes, packed and dispatched the same day they're picked.</p>
+      </td>
+    </tr>`;
+
+  const notesSection = params.notes ? `
+    <div style="padding:16px 18px;border:1px solid #e5eddf;border-radius:10px;margin-bottom:24px;">
+      <p style="margin:0 0 6px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Your Notes</p>
+      <p style="margin:0;font-size:14px;color:#374151;line-height:1.5;">${params.notes}</p>
+    </div>` : '';
+
+  return `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f4f7f2;font-family:'Helvetica Neue',Arial,sans-serif;">
+<div style="max-width:600px;margin:32px auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+  <!-- Header -->
+  <div style="background:#2d5a27;padding:40px 32px 32px;text-align:center;">
+    <p style="margin:0 0 8px;color:rgba(255,255,255,0.7);font-size:12px;letter-spacing:2px;text-transform:uppercase;">Ramnagar, Uttarakhand</p>
+    <h1 style="margin:0 0 6px;color:#fff;font-size:28px;font-weight:800;letter-spacing:-0.5px;">YourOrchard 🌳</h1>
+    <p style="margin:0;color:rgba(255,255,255,0.8);font-size:14px;">Own the harvest. Not the farm.</p>
+  </div>
+
+  <!-- Confirmation banner -->
+  <div style="background:#3a7234;padding:16px 32px;text-align:center;">
+    <p style="margin:0;color:#fff;font-size:16px;font-weight:600;">✅ Order Confirmed!</p>
+  </div>
+
+  <!-- Body -->
+  <div style="background:#fff;padding:32px;">
+
+    <!-- Order number -->
+    <div style="text-align:center;margin-bottom:28px;">
+      <p style="margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Order Number</p>
+      <p style="margin:0;font-size:24px;font-weight:800;color:#2d5a27;">#${params.orderNumber}</p>
+    </div>
+
+    <p style="margin:0 0 6px;font-size:17px;color:#111;">Hi <strong>${params.buyer.name}</strong>,</p>
+    <p style="margin:0 0 24px;font-size:14px;color:#555;line-height:1.6;">
+      Thank you for your order! We're thrilled to have you as part of the YourOrchard family. Here's a summary of everything you booked:
+    </p>
+
+    <!-- Items table -->
+    <table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid #e5eddf;">
+      <thead>
+        <tr style="background:#f6f9f5;">
+          <th style="padding:10px 14px;text-align:left;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Item</th>
+          <th style="padding:10px 14px;text-align:center;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Qty</th>
+          <th style="padding:10px 14px;text-align:right;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Unit Price</th>
+          <th style="padding:10px 14px;text-align:right;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Total</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 14px;background:#f6f9f5;border:1px solid #e5eddf;border-top:none;border-radius:0 0 10px 10px;margin-bottom:24px;">
+      <span style="font-size:15px;font-weight:700;color:#111;">Total Paid</span>
+      <span style="font-size:18px;font-weight:800;color:#2d5a27;">₹${params.totalAmount.toLocaleString('en-IN')}</span>
+    </div>
+
+    <!-- Delivery address -->
+    <div style="padding:16px 18px;border:1px solid #e5eddf;border-radius:10px;margin-bottom:24px;">
+      <p style="margin:0 0 6px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Delivery Address</p>
+      <p style="margin:0;font-size:14px;color:#374151;line-height:1.5;">${params.deliveryAddress.full}</p>
+    </div>
+
+    ${notesSection}
+
+    <!-- What happens next -->
+    <div style="margin:28px 0;padding:24px;background:#f6f9f5;border-radius:12px;">
+      <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#2d5a27;text-transform:uppercase;letter-spacing:1px;">What happens next</p>
+      <table style="width:100%;border-collapse:collapse;">
+        ${treeSteps}
+        ${boxSteps}
+        ${harvestStep}
+      </table>
+    </div>
+
+    <!-- Thank you note -->
+    <div style="margin-top:28px;padding:24px;background:#fef9f0;border-left:4px solid #f59e0b;border-radius:0 10px 10px 0;">
+      <p style="margin:0 0 10px;font-size:15px;font-weight:700;color:#92400e;">A note from our orchard 🙏</p>
+      <p style="margin:0;font-size:13.5px;color:#78350f;line-height:1.7;">
+        Every tree you rent helps a farming family in Ramnagar grow with dignity. Your support means the world to us and to them. We promise to send you only the freshest, most honest mangoes — picked at the right time, packed with care, delivered with love.
+      </p>
+      <p style="margin:12px 0 0;font-size:13px;color:#78350f;font-style:italic;">— The YourOrchard Team, Ramnagar</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#1e3d1a;padding:24px 32px;text-align:center;">
+    <p style="margin:0 0 8px;color:rgba(255,255,255,0.9);font-size:13px;">Questions? Reply to this email or write to us at</p>
+    <p style="margin:0 0 16px;"><a href="mailto:support.yourorchard@gmail.com" style="color:#86efac;font-size:13px;text-decoration:none;">support.yourorchard@gmail.com</a></p>
+    <p style="margin:0;color:rgba(255,255,255,0.4);font-size:11px;">© ${new Date().getFullYear()} YourOrchard · Ramnagar, Uttarakhand 244715</p>
+  </div>
+
+</div>
+</body>
+</html>`;
+}
+
+export function ownerMasterOrderNotificationEmail(params: {
+  orderNumber: string;
+  buyer: { name: string; email: string; phone: string };
+  customerEmail: string;
+  deliveryAddress: { full: string };
+  items: Array<{ type: string; plan?: string; variety: string; quantity: number; unitPrice: number; lineTotal: number }>;
+  totalAmount: number;
+  season: string;
+  notes?: string;
+  hasTree: boolean;
+  hasBox: boolean;
+}) {
+  const itemLines = params.items.map(i => {
+    const label = i.type === 'tree'
+      ? `${i.variety} ${i.plan || ''} Tree Rental (Token) ×${i.quantity}`
+      : `${i.variety} Mango Box ×${i.quantity}`;
+    return `<li style="margin:4px 0;font-size:14px;color:#374151;">${label} — ₹${i.lineTotal.toLocaleString('en-IN')}</li>`;
+  }).join('');
+
+  return `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f4f7f2;font-family:'Helvetica Neue',Arial,sans-serif;">
+<div style="max-width:520px;margin:32px auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  <div style="background:#2d5a27;padding:28px 32px;text-align:center;">
+    <h2 style="margin:0;color:#fff;font-size:20px;font-weight:800;">New Order #${params.orderNumber}</h2>
+    <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">₹${params.totalAmount.toLocaleString('en-IN')} · ${params.season} Season</p>
+  </div>
+  <div style="background:#fff;padding:28px 32px;">
+    <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Customer</p>
+    <p style="margin:0 0 16px;font-size:15px;color:#111;">${params.buyer.name} · ${params.customerEmail} · ${params.buyer.phone}</p>
+
+    <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Items</p>
+    <ul style="margin:0 0 16px;padding-left:20px;">${itemLines}</ul>
+
+    <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Deliver to</p>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;">${params.deliveryAddress.full}</p>
+
+    ${params.notes ? `<p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Customer Notes</p><p style="margin:0;font-size:14px;color:#374151;">${params.notes}</p>` : ''}
+  </div>
+</div>
+</body>
+</html>`;
+}
+
 export async function notifyOwnerNewOrder(params: {
   customerName: string;
   customerEmail: string;

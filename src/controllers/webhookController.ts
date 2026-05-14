@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Rental from '../models/Rental';
 import BoxOrder from '../models/BoxOrder';
 import PendingOrder from '../models/PendingOrder';
+import MasterOrder, { IMasterOrderItem, generateOrderNumber } from '../models/MasterOrder';
 import { verifyWebhookSignature } from '../utils/verifyRazorpay';
 import { BOX_PRICES } from '../constants/prices';
 
@@ -71,8 +72,75 @@ export async function handleWebhook(req: Request, res: Response) {
       }
     }
 
-    await Promise.allSettled(creates);
+    const results = await Promise.allSettled(creates);
     console.log(`[webhook] recovered order ${razorpayOrderId} from PendingOrder`);
+
+    // Also create a MasterOrder for the crash-recovery path
+    try {
+      const alreadyHasMaster = await MasterOrder.exists({ razorpayOrderId });
+      if (!alreadyHasMaster) {
+        const masterItems: IMasterOrderItem[] = [];
+        let totalAmount = 0;
+        let resultIdx = 0;
+
+        for (const item of pending.items) {
+          if (item.type === 'tree') {
+            for (let i = 0; i < item.qty; i++) {
+              const r = results[resultIdx++];
+              const rental = r.status === 'fulfilled' ? r.value : null;
+              const unitPrice = 0; // price not stored in PendingOrder items
+              masterItems.push({
+                type: 'tree',
+                plan: item.plan,
+                variety: item.variety,
+                quantity: 1,
+                unitPrice,
+                lineTotal: unitPrice,
+                refId: rental?._id,
+                refModel: 'Rental',
+              });
+            }
+          } else {
+            const r = results[resultIdx++];
+            const boxOrder = r.status === 'fulfilled' ? r.value : null;
+            const pricePerBox = BOX_PRICES[item.variety] || 0;
+            const lineTotal = pricePerBox * item.qty;
+            totalAmount += lineTotal;
+            masterItems.push({
+              type: 'box',
+              variety: item.variety,
+              quantity: item.qty,
+              unitPrice: pricePerBox,
+              lineTotal,
+              refId: boxOrder?._id,
+              refModel: 'BoxOrder',
+            });
+          }
+        }
+
+        const orderNumber = generateOrderNumber();
+        const deliveryFull = pending.deliveryAddress;
+        await MasterOrder.create({
+          orderNumber,
+          user: pending.userId,
+          razorpayOrderId,
+          razorpayPaymentId: paymentId,
+          razorpaySignature: '',
+          buyer: { name: pending.userName, email: pending.userEmail, phone: pending.userPhone },
+          deliveryAddress: { flat: '', street: '', city: '', state: '', pincode: '', full: deliveryFull },
+          items: masterItems,
+          subtotal: totalAmount,
+          totalAmount,
+          currency: 'INR',
+          season,
+          status: 'confirmed',
+          notes: '',
+        });
+        console.log(`[webhook] created MasterOrder ${orderNumber} for recovered order ${razorpayOrderId}`);
+      }
+    } catch (masterErr) {
+      console.error('[webhook] MasterOrder creation failed (non-fatal):', masterErr);
+    }
   }
 
   res.json({ ok: true });
