@@ -3,18 +3,7 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { AuthRequest } from '../middleware/auth';
 import PendingOrder from '../models/PendingOrder';
-
-const BOX_PRICES: Record<string, number> = {
-  chausa: 1299,
-  dasheri: 1499,
-  langra: 1399,
-};
-
-const PLAN_PRICES: Record<string, number> = {
-  sapling: 799,
-  adult: 1499,
-  grand: 2499,
-};
+import { BOX_PRICES, PLAN_PRICES } from '../constants/prices';
 
 function getRazorpay() {
   return new Razorpay({
@@ -100,6 +89,11 @@ export async function verifyPayment(req: AuthRequest, res: Response) {
     if (expected !== razorpaySignature) {
       return res.status(400).json({ message: 'Invalid payment signature.' });
     }
+
+    PendingOrder.findOneAndUpdate(
+      { razorpayOrderId, status: 'pending' },
+      { $set: { status: 'fulfilled' } },
+    ).catch(() => {});
 
     res.json({ success: true, paymentId: razorpayPaymentId, orderId: razorpayOrderId });
   } catch (err) {

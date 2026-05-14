@@ -3,8 +3,8 @@ import Rental from '../models/Rental';
 import { AuthRequest } from '../middleware/auth';
 import { verifyPaymentSignature } from '../utils/verifyRazorpay';
 import { sendMail, customerOrderHtml, notifyOwnerNewOrder } from '../utils/mailer';
+import { PLAN_PRICES } from '../constants/prices';
 
-const PLAN_PRICES: Record<string, number> = { sapling: 799, adult: 1499, grand: 2499 };
 const PLAN_LABELS: Record<string, string> = { sapling: 'Sapling Tree', adult: 'Adult Tree', grand: 'Grand Tree' };
 
 export async function createRental(req: AuthRequest, res: Response) {

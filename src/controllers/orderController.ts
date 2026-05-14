@@ -3,12 +3,7 @@ import BoxOrder from '../models/BoxOrder';
 import { AuthRequest } from '../middleware/auth';
 import { verifyPaymentSignature } from '../utils/verifyRazorpay';
 import { sendMail, customerOrderHtml, notifyOwnerNewOrder } from '../utils/mailer';
-
-const BOX_PRICES: Record<string, number> = {
-  chausa: 1299,
-  dasheri: 1499,
-  langra: 1399,
-};
+import { BOX_PRICES } from '../constants/prices';
 
 export async function createOrder(req: AuthRequest, res: Response) {
   try {

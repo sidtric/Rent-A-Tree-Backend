@@ -3,12 +3,7 @@ import Rental from '../models/Rental';
 import BoxOrder from '../models/BoxOrder';
 import PendingOrder from '../models/PendingOrder';
 import { verifyWebhookSignature } from '../utils/verifyRazorpay';
-
-const BOX_PRICES: Record<string, number> = {
-  chausa: 1299,
-  dasheri: 1499,
-  langra: 1399,
-};
+import { BOX_PRICES } from '../constants/prices';
 
 export async function handleWebhook(req: Request, res: Response) {
   const sig = req.headers['x-razorpay-signature'] as string;
