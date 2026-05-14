@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import fs from 'fs';
 import cloudinary from '../../config/cloudinary';
 import SiteSettings from '../../models/SiteSettings';
 import { AuthRequest } from '../../middleware/auth';
@@ -21,14 +22,30 @@ export async function adminGetSettings(_req: Request, res: Response) {
 type MediaField = 'heroMedia' | 'farmHeroMedia' | 'saplingMedia' | 'adultMedia' | 'grandMedia';
 
 async function uploadMedia(req: AuthRequest, res: Response, field: MediaField) {
-  const files = req.files as (Express.Multer.File & { path: string; filename: string; mimetype: string })[];
-  if (!files || files.length === 0) return res.status(400).json({ message: 'No files uploaded.' });
+  const files = (req.files as Express.Multer.File[]) || [];
+  if (!files.length) return res.status(400).json({ message: 'No files uploaded.' });
+
+  let results: any[];
+  try {
+    results = await Promise.all(
+      files.map(file =>
+        cloudinary.uploader.upload(file.path, {
+          folder:        'yourorchard/hero',
+          resource_type: file.mimetype.startsWith('video/') ? 'video' : 'image',
+        }).finally(() => fs.unlink(file.path, () => {}))
+      )
+    );
+  } catch (err) {
+    files.forEach(f => fs.unlink(f.path, () => {}));
+    throw err;
+  }
+
   const settings = await getSettings();
-  for (const file of files) {
+  for (const r of results) {
     settings[field].push({
-      url:      file.path,
-      publicId: file.filename,
-      type:     file.mimetype.startsWith('video/') ? 'video' : 'image',
+      url:      r.secure_url,
+      publicId: r.public_id,
+      type:     r.resource_type === 'video' ? 'video' : 'image',
     });
   }
   await settings.save();

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { protect, adminOnly } from '../../middleware/auth';
-import { uploadHeroMedia } from '../../middleware/upload';
+import { uploadMediaDisk } from '../../middleware/upload';
 
 import { adminGetAllTrees, adminUpdateTree, adminDeleteTree } from '../controllers/trees.admin';
 import { adminGetAllRentals, adminUpdateRentalStatus } from '../controllers/rentals.admin';
@@ -52,15 +52,15 @@ router.delete('/public-updates/:id',      adminDeletePublicUpdate);
 
 // Site settings
 router.get('/settings',                                                          adminGetSettings);
-router.post('/settings/hero-media',      uploadHeroMedia.array('media', 50),    adminUploadHeroMedia);
+router.post('/settings/hero-media',      uploadMediaDisk.array('media', 50),    adminUploadHeroMedia);
 router.delete('/settings/hero-media/:index',                                     adminDeleteHeroMedia);
-router.post('/settings/farm-hero-media', uploadHeroMedia.array('media', 50),    adminUploadFarmHeroMedia);
+router.post('/settings/farm-hero-media', uploadMediaDisk.array('media', 50),    adminUploadFarmHeroMedia);
 router.delete('/settings/farm-hero-media/:index',                                adminDeleteFarmHeroMedia);
-router.post('/settings/sapling-media',   uploadHeroMedia.array('media', 50),    adminUploadSaplingMedia);
+router.post('/settings/sapling-media',   uploadMediaDisk.array('media', 50),    adminUploadSaplingMedia);
 router.delete('/settings/sapling-media/:index',                                  adminDeleteSaplingMedia);
-router.post('/settings/adult-media',     uploadHeroMedia.array('media', 50),    adminUploadAdultMedia);
+router.post('/settings/adult-media',     uploadMediaDisk.array('media', 50),    adminUploadAdultMedia);
 router.delete('/settings/adult-media/:index',                                    adminDeleteAdultMedia);
-router.post('/settings/grand-media',     uploadHeroMedia.array('media', 50),    adminUploadGrandMedia);
+router.post('/settings/grand-media',     uploadMediaDisk.array('media', 50),    adminUploadGrandMedia);
 router.delete('/settings/grand-media/:index',                                    adminDeleteGrandMedia);
 
 export default router;

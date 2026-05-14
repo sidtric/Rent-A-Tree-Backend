@@ -5,7 +5,7 @@ export const BOX_PRICES: Record<string, number> = {
 };
 
 export const PLAN_PRICES: Record<string, number> = {
-  sapling: 799,
+  sapling: 1,
   adult:   1499,
   grand:   2499,
 };
