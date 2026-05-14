@@ -18,7 +18,7 @@ export async function adminGetSettings(_req: Request, res: Response) {
   }
 }
 
-type MediaField = 'heroMedia' | 'farmHeroMedia';
+type MediaField = 'heroMedia' | 'farmHeroMedia' | 'saplingMedia' | 'adultMedia' | 'grandMedia';
 
 async function uploadMedia(req: AuthRequest, res: Response, field: MediaField) {
   const files = req.files as (Express.Multer.File & { path: string; filename: string; mimetype: string })[];
@@ -69,13 +69,47 @@ export async function adminDeleteFarmHeroMedia(req: AuthRequest, res: Response) 
   catch (err) { console.error('[adminDeleteFarmHeroMedia]', err); res.status(500).json({ message: 'Server error.' }); }
 }
 
+export async function adminUploadSaplingMedia(req: AuthRequest, res: Response) {
+  try { await uploadMedia(req, res, 'saplingMedia'); }
+  catch (err) { console.error('[adminUploadSaplingMedia]', err); res.status(500).json({ message: 'Upload failed.' }); }
+}
+
+export async function adminDeleteSaplingMedia(req: AuthRequest, res: Response) {
+  try { await deleteMedia(req, res, 'saplingMedia'); }
+  catch (err) { console.error('[adminDeleteSaplingMedia]', err); res.status(500).json({ message: 'Server error.' }); }
+}
+
+export async function adminUploadAdultMedia(req: AuthRequest, res: Response) {
+  try { await uploadMedia(req, res, 'adultMedia'); }
+  catch (err) { console.error('[adminUploadAdultMedia]', err); res.status(500).json({ message: 'Upload failed.' }); }
+}
+
+export async function adminDeleteAdultMedia(req: AuthRequest, res: Response) {
+  try { await deleteMedia(req, res, 'adultMedia'); }
+  catch (err) { console.error('[adminDeleteAdultMedia]', err); res.status(500).json({ message: 'Server error.' }); }
+}
+
+export async function adminUploadGrandMedia(req: AuthRequest, res: Response) {
+  try { await uploadMedia(req, res, 'grandMedia'); }
+  catch (err) { console.error('[adminUploadGrandMedia]', err); res.status(500).json({ message: 'Upload failed.' }); }
+}
+
+export async function adminDeleteGrandMedia(req: AuthRequest, res: Response) {
+  try { await deleteMedia(req, res, 'grandMedia'); }
+  catch (err) { console.error('[adminDeleteGrandMedia]', err); res.status(500).json({ message: 'Server error.' }); }
+}
+
 // Public endpoint — no auth
 export async function publicGetSettings(_req: Request, res: Response) {
   try {
     const s = await getSettings();
+    const toPublic = (arr: typeof s.heroMedia) => arr.map(m => ({ url: m.url, type: m.type }));
     res.json({
-      heroMedia:     s.heroMedia.map(m => ({ url: m.url, type: m.type })),
-      farmHeroMedia: s.farmHeroMedia.map(m => ({ url: m.url, type: m.type })),
+      heroMedia:     toPublic(s.heroMedia),
+      farmHeroMedia: toPublic(s.farmHeroMedia),
+      saplingMedia:  toPublic(s.saplingMedia),
+      adultMedia:    toPublic(s.adultMedia),
+      grandMedia:    toPublic(s.grandMedia),
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });

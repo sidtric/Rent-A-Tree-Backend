@@ -9,7 +9,7 @@ import { adminGetAllReviews, adminDeleteReview } from '../controllers/reviews.ad
 import { adminGetAllUsers, adminSearchUsers, adminUpdateUserRole } from '../controllers/users.admin';
 import { adminGetStats, adminGetPayments } from '../controllers/stats.admin';
 import { adminGetMessages, adminDeleteMessage, adminGetPublicUpdates, adminDeletePublicUpdate } from '../controllers/content.admin';
-import { adminGetSettings, adminUploadHeroMedia, adminDeleteHeroMedia, adminUploadFarmHeroMedia, adminDeleteFarmHeroMedia } from '../controllers/settings.admin';
+import { adminGetSettings, adminUploadHeroMedia, adminDeleteHeroMedia, adminUploadFarmHeroMedia, adminDeleteFarmHeroMedia, adminUploadSaplingMedia, adminDeleteSaplingMedia, adminUploadAdultMedia, adminDeleteAdultMedia, adminUploadGrandMedia, adminDeleteGrandMedia } from '../controllers/settings.admin';
 
 const router = Router();
 router.use(protect, adminOnly);
@@ -56,5 +56,11 @@ router.post('/settings/hero-media',      uploadHeroMedia.array('media', 50),    
 router.delete('/settings/hero-media/:index',                                     adminDeleteHeroMedia);
 router.post('/settings/farm-hero-media', uploadHeroMedia.array('media', 50),    adminUploadFarmHeroMedia);
 router.delete('/settings/farm-hero-media/:index',                                adminDeleteFarmHeroMedia);
+router.post('/settings/sapling-media',   uploadHeroMedia.array('media', 50),    adminUploadSaplingMedia);
+router.delete('/settings/sapling-media/:index',                                  adminDeleteSaplingMedia);
+router.post('/settings/adult-media',     uploadHeroMedia.array('media', 50),    adminUploadAdultMedia);
+router.delete('/settings/adult-media/:index',                                    adminDeleteAdultMedia);
+router.post('/settings/grand-media',     uploadHeroMedia.array('media', 50),    adminUploadGrandMedia);
+router.delete('/settings/grand-media/:index',                                    adminDeleteGrandMedia);
 
 export default router;

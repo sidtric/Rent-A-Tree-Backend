@@ -47,8 +47,9 @@ app.use(cors({
 app.use(express.json({ limit: '10kb' }));
 app.use(mongoSanitize());
 
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
+const isDev = process.env.NODE_ENV !== 'production';
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 500, standardHeaders: true, legacyHeaders: false, skip: () => isDev });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, standardHeaders: true, legacyHeaders: false, skip: () => isDev });
 
 app.use('/api', limiter);
 app.use('/api/auth', authLimiter, authRoutes);

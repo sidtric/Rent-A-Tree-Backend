@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { createRental, getMyRentals, getAllRentals, cancelRental, payBalance } from '../controllers/rentalController';
+import { createRental, getMyRentals, getAllRentals, cancelRental, payBalance, getPublicRentals } from '../controllers/rentalController';
 import { protect, adminOnly } from '../middleware/auth';
 
 const router = Router();
+router.get('/public', getPublicRentals);
 router.use(protect);
 router.post('/', createRental);
 router.get('/my', getMyRentals);

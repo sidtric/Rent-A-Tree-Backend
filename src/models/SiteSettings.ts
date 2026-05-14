@@ -9,6 +9,9 @@ export interface HeroMedia {
 export interface ISiteSettings extends Document {
   heroMedia:      HeroMedia[];
   farmHeroMedia:  HeroMedia[];
+  saplingMedia:   HeroMedia[];
+  adultMedia:     HeroMedia[];
+  grandMedia:     HeroMedia[];
 }
 
 const mediaSchema = {
@@ -23,6 +26,9 @@ const mediaSchema = {
 const SiteSettingsSchema = new Schema<ISiteSettings>({
   heroMedia:     mediaSchema,
   farmHeroMedia: mediaSchema,
+  saplingMedia:  mediaSchema,
+  adultMedia:    mediaSchema,
+  grandMedia:    mediaSchema,
 }, { timestamps: true });
 
 export default mongoose.model<ISiteSettings>('SiteSettings', SiteSettingsSchema);

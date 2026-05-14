@@ -1,6 +1,7 @@
 import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from '../config/cloudinary';
+import os from 'os';
 
 const imageStorage = new CloudinaryStorage({
   cloudinary,
@@ -26,3 +27,10 @@ const heroMediaStorage = new CloudinaryStorage({
 export const uploadImage      = multer({ storage: imageStorage,      limits: { fileSize: 10  * 1024 * 1024 } });
 export const uploadMedia      = multer({ storage: mediaStorage,      limits: { fileSize: 100 * 1024 * 1024 } });
 export const uploadHeroMedia  = multer({ storage: heroMediaStorage,  limits: { fileSize: 500 * 1024 * 1024 } });
+
+// Disk-based intake — files land on disk first, then uploaded to Cloudinary in parallel by the controller
+const diskStorage = multer.diskStorage({
+  destination: os.tmpdir(),
+  filename: (_req, file, cb) => cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.originalname}`),
+});
+export const uploadMediaDisk = multer({ storage: diskStorage, limits: { fileSize: 200 * 1024 * 1024 } });

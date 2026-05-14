@@ -45,6 +45,7 @@ export async function createOrder(req: AuthRequest, res: Response) {
         items: [{ label, qty, price: pricePerBox * qty }],
         total: pricePerBox * qty,
         deliveryAddress,
+        type: 'box',
       })),
       notifyOwnerNewOrder({
         customerName: req.user!.name,
