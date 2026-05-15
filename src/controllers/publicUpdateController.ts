@@ -1,6 +1,4 @@
 import { Request, Response } from 'express';
-import fs from 'fs';
-import cloudinary from '../config/cloudinary';
 import PublicUpdate from '../models/PublicUpdate';
 import { AuthRequest } from '../middleware/auth';
 
@@ -19,32 +17,22 @@ export async function getUpdates(req: Request, res: Response) {
 }
 
 export async function createUpdate(req: AuthRequest, res: Response) {
-  const files = (req.files as Express.Multer.File[]) || [];
   try {
+    const files = (req.files as (Express.Multer.File & { path: string; filename: string; mimetype: string })[]) || [];
     const { caption, variety } = req.body;
 
-    // Upload all files to Cloudinary in parallel — much faster than sequential middleware uploads
-    const results = await Promise.all(
-      files.map(file =>
-        cloudinary.uploader.upload(file.path, {
-          folder: 'yourorchard/media',
-          resource_type: file.mimetype.startsWith('video/') ? 'video' : 'image',
-        }).finally(() => fs.unlink(file.path, () => {}))
-      )
-    );
+    if (files.length === 0) return res.status(400).json({ message: 'No files uploaded.' });
 
-    const media = results.map(r => ({
-      url: r.secure_url,
-      type: (r.resource_type === 'video' ? 'video' : 'image') as 'image' | 'video',
+    const media = files.map(file => ({
+      url:  file.path,
+      type: (file.mimetype.startsWith('video/') ? 'video' : 'image') as 'image' | 'video',
     }));
 
     const update = await PublicUpdate.create({ caption, media, variety: variety || null });
     res.status(201).json(update);
-  } catch (err) {
-    // Clean up any temp files that weren't already cleaned
-    files.forEach(f => fs.unlink(f.path, () => {}));
-    console.error('[createUpdate]', err);
-    res.status(500).json({ message: 'Server error.' });
+  } catch (err: any) {
+    console.error('[createUpdate]', err?.message || err, err?.stack);
+    res.status(500).json({ message: err?.message || 'Server error.' });
   }
 }
 
