@@ -68,6 +68,7 @@ app.use('/api/checkout', checkoutRoutes);
 app.use('/api/prices', pricesRoutes);
 
 app.get('/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
+
 app.use((_req, res) => res.status(404).json({ message: 'Not found.' }));
 
 // Global error handler — catches multer/cloudinary errors that bypass controller try/catch

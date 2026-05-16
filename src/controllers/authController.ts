@@ -1,19 +1,28 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import fetch from 'node-fetch';
+import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User';
 import { AuthRequest } from '../middleware/auth';
 import { sendMail, otpEmailHtml } from '../utils/mailer';
 import { generateOtp, setOtp, getOtp, deleteOtp, isOnCooldown } from '../utils/otpStore';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 function signToken(id: string) {
   return jwt.sign({ id }, process.env.JWT_SECRET!, { expiresIn: '30d' });
 }
 
 function userPayload(user: any) {
-  return { id: user._id, name: user.name, email: user.email, role: user.role };
+  const p: Record<string, unknown> = {
+    id:    user._id,
+    name:  user.name,
+    email: user.email,
+    role:  user.role,
+  };
+  if (user.phone)           p.phone           = user.phone;
+  if (user.deliveryAddress) p.deliveryAddress = user.deliveryAddress;
+  return p;
 }
 
 // ── OTP: send ────────────────────────────────────────────────────────────────
@@ -27,7 +36,7 @@ export async function sendOtp(req: Request, res: Response) {
 
     const lEmail = email.toLowerCase();
 
-    if (isOnCooldown(lEmail)) {
+    if (await isOnCooldown(lEmail)) {
       return res.status(429).json({ message: 'Please wait 30 seconds before requesting another OTP.' });
     }
 
@@ -41,7 +50,7 @@ export async function sendOtp(req: Request, res: Response) {
       if (!phone) return res.status(400).json({ message: 'Phone number is required.' });
 
       const otp = generateOtp();
-      setOtp(lEmail, { otp, type: 'signup', name: name.trim(), phone });
+      await setOtp(lEmail, { otp, type: 'signup', name: name.trim(), phone });
       await sendMail(lEmail, 'Your YourOrchard verification code', otpEmailHtml(name.trim(), otp));
     } else {
       // Login mode
@@ -50,7 +59,7 @@ export async function sendOtp(req: Request, res: Response) {
       }
 
       const otp = generateOtp();
-      setOtp(lEmail, { otp, type: 'login' });
+      await setOtp(lEmail, { otp, type: 'login' });
       await sendMail(lEmail, 'Your YourOrchard sign-in code', otpEmailHtml(existingUser.name, otp));
     }
 
@@ -71,7 +80,7 @@ export async function verifyOtp(req: Request, res: Response) {
     }
 
     const lEmail = email.toLowerCase();
-    const entry = getOtp(lEmail);
+    const entry = await getOtp(lEmail);
 
     if (!entry) {
       return res.status(400).json({ message: 'OTP expired or not found. Please request a new one.' });
@@ -80,7 +89,7 @@ export async function verifyOtp(req: Request, res: Response) {
       return res.status(400).json({ message: 'Incorrect OTP. Please try again.' });
     }
 
-    deleteOtp(lEmail);
+    await deleteOtp(lEmail);
 
     let user;
     if (entry.type === 'signup') {
@@ -92,7 +101,7 @@ export async function verifyOtp(req: Request, res: Response) {
 
     res.json({
       token: signToken(String(user._id)),
-      user: userPayload(user),
+      user:  userPayload(user),
     });
   } catch (err) {
     console.error('[verifyOtp]', err);
@@ -107,14 +116,13 @@ export async function googleAuth(req: Request, res: Response) {
     const { credential } = req.body;
     if (!credential) return res.status(400).json({ message: 'Credential is required.' });
 
-    const tokenRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
-    const payload = await tokenRes.json() as any;
-
-    if (!tokenRes.ok || !payload.email) {
+    const ticket = await googleClient.verifyIdToken({
+      idToken:  credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload?.email) {
       return res.status(400).json({ message: 'Invalid Google token.' });
-    }
-    if (payload.aud !== process.env.GOOGLE_CLIENT_ID) {
-      return res.status(400).json({ message: 'Google token audience mismatch.' });
     }
 
     const { email, name, sub: googleId } = payload;
@@ -132,7 +140,7 @@ export async function googleAuth(req: Request, res: Response) {
 
     res.json({
       token: signToken(String(user._id)),
-      user: userPayload(user),
+      user:  userPayload(user),
     });
   } catch (err) {
     console.error('[googleAuth]', err);
@@ -160,7 +168,7 @@ export async function register(req: Request, res: Response) {
     const user = await User.create({ name, email, password, phone });
     res.status(201).json({
       token: signToken(String(user._id)),
-      user: userPayload(user),
+      user:  userPayload(user),
     });
   } catch (err) {
     console.error('[register]', err);
@@ -180,7 +188,7 @@ export async function login(req: Request, res: Response) {
     }
     res.json({
       token: signToken(String(user._id)),
-      user: userPayload(user),
+      user:  userPayload(user),
     });
   } catch (err) {
     console.error('[login]', err);

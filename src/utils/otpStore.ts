@@ -1,43 +1,61 @@
-interface OtpEntry {
+import OtpToken from '../models/OtpToken';
+
+export interface OtpEntry {
   otp: string;
-  expires: number;
   type: 'signup' | 'login';
   name?: string;
   phone?: string;
   cooldownUntil?: number;
 }
 
-const store = new Map<string, OtpEntry>();
-
 export function generateOtp(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-export function setOtp(email: string, entry: Omit<OtpEntry, 'expires' | 'cooldownUntil'>): void {
-  const existing = store.get(email);
-  store.set(email.toLowerCase(), {
-    ...entry,
-    expires: Date.now() + 10 * 60 * 1000,
-    cooldownUntil: Date.now() + 30 * 1000,
-    ...(existing?.cooldownUntil ? { cooldownUntil: existing.cooldownUntil } : {}),
-  });
+export async function setOtp(
+  email: string,
+  entry: Omit<OtpEntry, 'cooldownUntil'>,
+): Promise<void> {
+  const lEmail = email.toLowerCase();
+  const existing = await OtpToken.findOne({ email: lEmail });
+  const cooldownUntil =
+    existing?.cooldownUntil && existing.cooldownUntil > Date.now()
+      ? existing.cooldownUntil
+      : Date.now() + 30 * 1000;
+
+  await OtpToken.findOneAndUpdate(
+    { email: lEmail },
+    {
+      $set: {
+        otp:           entry.otp,
+        type:          entry.type,
+        name:          entry.name,
+        phone:         entry.phone,
+        cooldownUntil,
+        expiresAt:     new Date(Date.now() + 10 * 60 * 1000),
+      },
+    },
+    { upsert: true, new: true },
+  );
 }
 
-export function getOtp(email: string): OtpEntry | undefined {
-  const entry = store.get(email.toLowerCase());
-  if (!entry) return undefined;
-  if (Date.now() > entry.expires) {
-    store.delete(email.toLowerCase());
-    return undefined;
-  }
-  return entry;
+export async function getOtp(email: string): Promise<OtpEntry | null> {
+  const entry = await OtpToken.findOne({ email: email.toLowerCase() });
+  if (!entry) return null;
+  return {
+    otp:           entry.otp,
+    type:          entry.type as 'signup' | 'login',
+    name:          entry.name          ?? undefined,
+    phone:         entry.phone         ?? undefined,
+    cooldownUntil: entry.cooldownUntil ?? undefined,
+  };
 }
 
-export function isOnCooldown(email: string): boolean {
-  const entry = store.get(email.toLowerCase());
+export async function isOnCooldown(email: string): Promise<boolean> {
+  const entry = await OtpToken.findOne({ email: email.toLowerCase() });
   return !!entry?.cooldownUntil && Date.now() < entry.cooldownUntil;
 }
 
-export function deleteOtp(email: string): void {
-  store.delete(email.toLowerCase());
+export async function deleteOtp(email: string): Promise<void> {
+  await OtpToken.deleteOne({ email: email.toLowerCase() });
 }
