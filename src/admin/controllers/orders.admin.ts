@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import BoxOrder from '../../models/BoxOrder';
 import { AuthRequest } from '../../middleware/auth';
-import { sendMail, orderStatusHtml } from '../../utils/mailer';
+import { sendMail, orderStatusHtml, boxDeliveredThankYouHtml } from '../../utils/mailer';
 
 const VALID_STATUSES = ['pending_payment', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
 const EMAIL_STATUSES = new Set(['dispatched', 'delivered', 'cancelled']);
@@ -33,13 +33,13 @@ export async function adminUpdateOrderStatus(req: AuthRequest, res: Response) {
 
     const u = order.user as any;
     if (EMAIL_STATUSES.has(status) && u?.email) {
-      sendMail(u.email, `Your Mango Box Update — YourOrchard`, orderStatusHtml({
-        customerName:    u.name || 'Valued Customer',
-        variety:         order.variety,
-        quantity:        order.quantity,
-        status,
-        deliveryAddress: order.deliveryAddress,
-      })).catch(err => console.error('[mailer]', err));
+      const subject = status === 'delivered'
+        ? 'Your mangoes have arrived! 🥭 — YourOrchard'
+        : `Your Mango Box Update — YourOrchard`;
+      const html = status === 'delivered'
+        ? boxDeliveredThankYouHtml({ customerName: u.name || 'Valued Customer', variety: order.variety, quantity: order.quantity })
+        : orderStatusHtml({ customerName: u.name || 'Valued Customer', variety: order.variety, quantity: order.quantity, status, deliveryAddress: order.deliveryAddress });
+      sendMail(u.email, subject, html).catch(err => console.error('[mailer]', err));
     }
 
     res.json(order);

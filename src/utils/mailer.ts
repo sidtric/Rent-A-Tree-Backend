@@ -490,3 +490,125 @@ export async function notifyOwnerNewOrder(params: {
 </div>`;
   await sendMail(OWNER, subject, html);
 }
+
+export function boxDeliveredThankYouHtml(params: {
+  customerName: string;
+  variety: string;
+  quantity: number;
+  reviewUrl?: string;
+}): string {
+  const reviewBtn = params.reviewUrl
+    ? `<a href="${params.reviewUrl}" style="display:inline-block;margin-top:20px;padding:14px 32px;background:#2d5a27;color:#fff;text-decoration:none;border-radius:10px;font-size:15px;font-weight:700;">Leave a Review</a>`
+    : `<a href="mailto:support.yourorchard@gmail.com?subject=My feedback on YourOrchard" style="display:inline-block;margin-top:20px;padding:14px 32px;background:#2d5a27;color:#fff;text-decoration:none;border-radius:10px;font-size:15px;font-weight:700;">Share Your Feedback</a>`;
+
+  return `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f4f7f2;font-family:'Helvetica Neue',Arial,sans-serif;">
+<div style="max-width:520px;margin:32px auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+  <div style="background:#2d5a27;padding:40px 32px 28px;text-align:center;">
+    <p style="margin:0 0 8px;color:rgba(255,255,255,0.7);font-size:12px;letter-spacing:2px;text-transform:uppercase;">Ramnagar, Uttarakhand</p>
+    <h1 style="margin:0 0 6px;color:#fff;font-size:28px;font-weight:800;letter-spacing:-0.5px;">YourOrchard 🌳</h1>
+    <p style="margin:0;color:rgba(255,255,255,0.8);font-size:14px;">Own the harvest. Not the farm.</p>
+  </div>
+
+  <div style="background:#fff;padding:36px 32px;text-align:center;">
+    <div style="font-size:56px;margin-bottom:16px;">🥭</div>
+    <h2 style="margin:0 0 10px;font-size:22px;font-weight:800;color:#111;">Your mangoes have arrived!</h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.7;">
+      Hi <strong>${params.customerName}</strong>, your <strong>${params.quantity} × ${params.variety.charAt(0).toUpperCase() + params.variety.slice(1)} mango box</strong> has been delivered. We hope every bite was as fresh and sweet as the orchard itself.
+    </p>
+
+    <div style="background:#f6f9f5;border-radius:12px;padding:24px;text-align:left;margin-bottom:28px;">
+      <p style="margin:0 0 10px;font-size:15px;font-weight:700;color:#111;">How were they? 🌿</p>
+      <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.7;">
+        Your feedback means everything — not just to us, but to the farming family in Ramnagar who grew your mangoes. A quick review takes 30 seconds and helps more people discover honest, farm-fresh produce.
+      </p>
+      <div style="text-align:center;">
+        ${reviewBtn}
+      </div>
+    </div>
+
+    <div style="background:#fef9f0;border-left:4px solid #f59e0b;border-radius:0 10px 10px 0;padding:18px 20px;text-align:left;margin-bottom:24px;">
+      <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#92400e;">See you next season? 🌱</p>
+      <p style="margin:0;font-size:13px;color:#78350f;line-height:1.6;">
+        Pre-bookings for the next harvest season will open soon. You'll be the first to know — just keep an eye on your inbox.
+      </p>
+    </div>
+
+    <p style="margin:0;font-size:13px;color:#9ca3af;">Thank you for choosing YourOrchard. It means the world to us.</p>
+    <p style="margin:8px 0 0;font-size:13px;color:#9ca3af;font-style:italic;">— The YourOrchard Team, Ramnagar</p>
+  </div>
+
+  <div style="background:#1e3d1a;padding:20px 32px;text-align:center;">
+    <p style="margin:0 0 6px;color:rgba(255,255,255,0.9);font-size:13px;">Questions? Write to us at</p>
+    <a href="mailto:support.yourorchard@gmail.com" style="color:#86efac;font-size:13px;text-decoration:none;">support.yourorchard@gmail.com</a>
+    <p style="margin:10px 0 0;color:rgba(255,255,255,0.4);font-size:11px;">© ${new Date().getFullYear()} YourOrchard · Ramnagar, Uttarakhand 244715</p>
+  </div>
+
+</div>
+</body>
+</html>`;
+}
+
+export function rentalCompletedThankYouHtml(params: {
+  customerName: string;
+  plan: string;
+  variety: string;
+  reviewUrl?: string;
+}): string {
+  const reviewBtn = params.reviewUrl
+    ? `<a href="${params.reviewUrl}" style="display:inline-block;margin-top:20px;padding:14px 32px;background:#2d5a27;color:#fff;text-decoration:none;border-radius:10px;font-size:15px;font-weight:700;">Leave a Review</a>`
+    : `<a href="mailto:support.yourorchard@gmail.com?subject=My feedback on YourOrchard" style="display:inline-block;margin-top:20px;padding:14px 32px;background:#2d5a27;color:#fff;text-decoration:none;border-radius:10px;font-size:15px;font-weight:700;">Share Your Feedback</a>`;
+
+  return `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f4f7f2;font-family:'Helvetica Neue',Arial,sans-serif;">
+<div style="max-width:520px;margin:32px auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+  <div style="background:#2d5a27;padding:40px 32px 28px;text-align:center;">
+    <p style="margin:0 0 8px;color:rgba(255,255,255,0.7);font-size:12px;letter-spacing:2px;text-transform:uppercase;">Ramnagar, Uttarakhand</p>
+    <h1 style="margin:0 0 6px;color:#fff;font-size:28px;font-weight:800;letter-spacing:-0.5px;">YourOrchard 🌳</h1>
+    <p style="margin:0;color:rgba(255,255,255,0.8);font-size:14px;">Own the harvest. Not the farm.</p>
+  </div>
+
+  <div style="background:#fff;padding:36px 32px;text-align:center;">
+    <div style="font-size:56px;margin-bottom:16px;">🌳</div>
+    <h2 style="margin:0 0 10px;font-size:22px;font-weight:800;color:#111;">What a season it's been!</h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.7;">
+      Hi <strong>${params.customerName}</strong>, your <strong>${params.plan} ${params.variety.charAt(0).toUpperCase() + params.variety.slice(1)} tree</strong> had a wonderful season. Your mangoes are on their way and we hope you savour every single one.
+    </p>
+
+    <div style="background:#f6f9f5;border-radius:12px;padding:24px;text-align:left;margin-bottom:28px;">
+      <p style="margin:0 0 10px;font-size:15px;font-weight:700;color:#111;">How was your experience? 🌿</p>
+      <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.7;">
+        You just completed a full season as an orchard owner — that's something special. Tell us how it went. Your words help more families in Ramnagar earn with dignity, and help more people discover what honest farming tastes like.
+      </p>
+      <div style="text-align:center;">
+        ${reviewBtn}
+      </div>
+    </div>
+
+    <div style="background:#fef9f0;border-left:4px solid #f59e0b;border-radius:0 10px 10px 0;padding:18px 20px;text-align:left;margin-bottom:24px;">
+      <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#92400e;">Your tree will be waiting next season 🌱</p>
+      <p style="margin:0;font-size:13px;color:#78350f;line-height:1.6;">
+        Pre-bookings for the next harvest open soon. As a returning orchard owner, you'll get early access — watch your inbox.
+      </p>
+    </div>
+
+    <p style="margin:0;font-size:13px;color:#9ca3af;">Thank you for being part of the YourOrchard family this season.</p>
+    <p style="margin:8px 0 0;font-size:13px;color:#9ca3af;font-style:italic;">— The YourOrchard Team, Ramnagar</p>
+  </div>
+
+  <div style="background:#1e3d1a;padding:20px 32px;text-align:center;">
+    <p style="margin:0 0 6px;color:rgba(255,255,255,0.9);font-size:13px;">Questions? Write to us at</p>
+    <a href="mailto:support.yourorchard@gmail.com" style="color:#86efac;font-size:13px;text-decoration:none;">support.yourorchard@gmail.com</a>
+    <p style="margin:10px 0 0;color:rgba(255,255,255,0.4);font-size:11px;">© ${new Date().getFullYear()} YourOrchard · Ramnagar, Uttarakhand 244715</p>
+  </div>
+
+</div>
+</body>
+</html>`;
+}

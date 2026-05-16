@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import Rental from '../../models/Rental';
 import { AuthRequest } from '../../middleware/auth';
-import { sendMail, rentalStatusHtml } from '../../utils/mailer';
+import { sendMail, rentalStatusHtml, rentalCompletedThankYouHtml } from '../../utils/mailer';
 import { PLAN_LABELS } from '../../constants/prices';
 
 const VALID_STATUSES = ['pending_payment', 'active', 'completed', 'cancelled'];
@@ -34,13 +34,13 @@ export async function adminUpdateRentalStatus(req: AuthRequest, res: Response) {
 
     const u = rental.user as any;
     if (EMAIL_STATUSES.has(status) && u?.email) {
-      sendMail(u.email, `Your Tree Rental Update — YourOrchard`, rentalStatusHtml({
-        customerName:    u.name || 'Valued Customer',
-        plan:            PLAN_LABELS[rental.plan] || rental.plan,
-        variety:         rental.variety,
-        status,
-        deliveryAddress: rental.deliveryAddress,
-      })).catch(err => console.error('[mailer]', err));
+      const subject = status === 'completed'
+        ? 'What a season! 🌳 — YourOrchard'
+        : `Your Tree Rental Update — YourOrchard`;
+      const html = status === 'completed'
+        ? rentalCompletedThankYouHtml({ customerName: u.name || 'Valued Customer', plan: PLAN_LABELS[rental.plan] || rental.plan, variety: rental.variety })
+        : rentalStatusHtml({ customerName: u.name || 'Valued Customer', plan: PLAN_LABELS[rental.plan] || rental.plan, variety: rental.variety, status, deliveryAddress: rental.deliveryAddress });
+      sendMail(u.email, subject, html).catch(err => console.error('[mailer]', err));
     }
 
     res.json(rental);
