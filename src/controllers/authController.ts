@@ -1,11 +1,154 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User';
 import { AuthRequest } from '../middleware/auth';
+import { sendMail, otpEmailHtml } from '../utils/mailer';
+import { generateOtp, setOtp, getOtp, deleteOtp, isOnCooldown } from '../utils/otpStore';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 function signToken(id: string) {
   return jwt.sign({ id }, process.env.JWT_SECRET!, { expiresIn: '30d' });
 }
+
+function userPayload(user: any) {
+  const p: Record<string, unknown> = {
+    id:    user._id,
+    name:  user.name,
+    email: user.email,
+    role:  user.role,
+  };
+  if (user.phone)           p.phone           = user.phone;
+  if (user.deliveryAddress) p.deliveryAddress = user.deliveryAddress;
+  return p;
+}
+
+// ── OTP: send ────────────────────────────────────────────────────────────────
+
+export async function sendOtp(req: Request, res: Response) {
+  try {
+    const { email, name, phone } = req.body;
+    if (!email || !EMAIL_RE.test(email)) {
+      return res.status(400).json({ message: 'Valid email is required.' });
+    }
+
+    const lEmail = email.toLowerCase();
+
+    if (await isOnCooldown(lEmail)) {
+      return res.status(429).json({ message: 'Please wait 30 seconds before requesting another OTP.' });
+    }
+
+    const existingUser = await User.findOne({ email: lEmail });
+
+    if (name) {
+      // Signup mode
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email already registered. Please log in.' });
+      }
+      if (!phone) return res.status(400).json({ message: 'Phone number is required.' });
+
+      const otp = generateOtp();
+      await setOtp(lEmail, { otp, type: 'signup', name: name.trim(), phone });
+      await sendMail(lEmail, 'Your YourOrchard verification code', otpEmailHtml(name.trim(), otp));
+    } else {
+      // Login mode
+      if (!existingUser) {
+        return res.status(404).json({ message: 'No account found. Please sign up first.' });
+      }
+
+      const otp = generateOtp();
+      await setOtp(lEmail, { otp, type: 'login' });
+      await sendMail(lEmail, 'Your YourOrchard sign-in code', otpEmailHtml(existingUser.name, otp));
+    }
+
+    res.json({ message: 'OTP sent to your email.' });
+  } catch (err) {
+    console.error('[sendOtp]', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+}
+
+// ── OTP: verify ───────────────────────────────────────────────────────────────
+
+export async function verifyOtp(req: Request, res: Response) {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and OTP are required.' });
+    }
+
+    const lEmail = email.toLowerCase();
+    const entry = await getOtp(lEmail);
+
+    if (!entry) {
+      return res.status(400).json({ message: 'OTP expired or not found. Please request a new one.' });
+    }
+    if (entry.otp !== String(otp).trim()) {
+      return res.status(400).json({ message: 'Incorrect OTP. Please try again.' });
+    }
+
+    await deleteOtp(lEmail);
+
+    let user;
+    if (entry.type === 'signup') {
+      user = await User.create({ name: entry.name, email: lEmail, phone: entry.phone });
+    } else {
+      user = await User.findOne({ email: lEmail });
+      if (!user) return res.status(404).json({ message: 'User not found.' });
+    }
+
+    res.json({
+      token: signToken(String(user._id)),
+      user:  userPayload(user),
+    });
+  } catch (err) {
+    console.error('[verifyOtp]', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+}
+
+// ── Google OAuth ──────────────────────────────────────────────────────────────
+
+export async function googleAuth(req: Request, res: Response) {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ message: 'Credential is required.' });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken:  credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload?.email) {
+      return res.status(400).json({ message: 'Invalid Google token.' });
+    }
+
+    const { email, name, sub: googleId } = payload;
+    const lEmail = email.toLowerCase();
+
+    let user = await User.findOne({ $or: [{ googleId }, { email: lEmail }] });
+    if (user) {
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+    } else {
+      user = await User.create({ name: name || lEmail, email: lEmail, googleId });
+    }
+
+    res.json({
+      token: signToken(String(user._id)),
+      user:  userPayload(user),
+    });
+  } catch (err) {
+    console.error('[googleAuth]', err);
+    res.status(400).json({ message: 'Google authentication failed.' });
+  }
+}
+
+// ── Legacy (kept for admin/backward compat) ───────────────────────────────────
 
 export async function register(req: Request, res: Response) {
   try {
@@ -13,7 +156,6 @@ export async function register(req: Request, res: Response) {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required.' });
     }
-    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!EMAIL_RE.test(email)) {
       return res.status(400).json({ message: 'Please enter a valid email address.' });
     }
@@ -26,7 +168,7 @@ export async function register(req: Request, res: Response) {
     const user = await User.create({ name, email, password, phone });
     res.status(201).json({
       token: signToken(String(user._id)),
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user:  userPayload(user),
     });
   } catch (err) {
     console.error('[register]', err);
@@ -46,7 +188,7 @@ export async function login(req: Request, res: Response) {
     }
     res.json({
       token: signToken(String(user._id)),
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user:  userPayload(user),
     });
   } catch (err) {
     console.error('[login]', err);

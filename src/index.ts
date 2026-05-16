@@ -18,6 +18,7 @@ import adminRoutes from './admin/routes/admin';
 import webhookRoutes from './routes/webhook';
 import settingsRoutes from './routes/settings';
 import checkoutRoutes from './routes/checkout';
+import pricesRoutes from './routes/prices';
 
 const app = express();
 
@@ -64,9 +65,18 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/checkout', checkoutRoutes);
+app.use('/api/prices', pricesRoutes);
 
 app.get('/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
+
 app.use((_req, res) => res.status(404).json({ message: 'Not found.' }));
+
+// Global error handler — catches multer/cloudinary errors that bypass controller try/catch
+app.use((err: any, _req: any, res: any, _next: any) => {
+  console.error('[error]', err?.message || err);
+  const status = err?.http_code || err?.statusCode || err?.status || 500;
+  res.status(status).json({ message: err?.message || 'Server error.' });
+});
 
 const PORT = process.env.PORT || 5000;
 connectDB()

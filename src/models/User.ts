@@ -12,7 +12,8 @@ export interface IDeliveryAddress {
 export interface IUser extends Document {
   name: string;
   email: string;
-  password: string;
+  password?: string;
+  googleId?: string;
   phone?: string;
   role: 'user' | 'admin';
   deliveryAddress?: IDeliveryAddress;
@@ -22,7 +23,8 @@ export interface IUser extends Document {
 const schema = new Schema<IUser>({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true },
+  password: { type: String },
+  googleId: { type: String, sparse: true },
   phone: String,
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   deliveryAddress: {
@@ -35,11 +37,12 @@ const schema = new Schema<IUser>({
 }, { timestamps: true });
 
 schema.pre('save', async function () {
-  if (!this.isModified('password')) return;
+  if (!this.isModified('password') || !this.password) return;
   this.password = await bcrypt.hash(this.password, 10);
 });
 
 schema.methods.comparePassword = function (plain: string) {
+  if (!this.password) return Promise.resolve(false);
   return bcrypt.compare(plain, this.password);
 };
 
