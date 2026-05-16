@@ -24,6 +24,32 @@ export async function sendMail(to: string, subject: string, html: string) {
 
 const OWNER = process.env.OWNER_EMAIL || 'siddharthfuloria06@gmail.com';
 
+export function otpEmailHtml(name: string, otp: string): string {
+  return `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f4f7f2;font-family:'Helvetica Neue',Arial,sans-serif;">
+<div style="max-width:480px;margin:40px auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  <div style="background:#2d5a27;padding:32px 32px 24px;text-align:center;">
+    <h1 style="margin:0;color:#fff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">YourOrchard 🌳</h1>
+    <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:13px;">Own the harvest. Not the farm.</p>
+  </div>
+  <div style="background:#fff;padding:36px 32px;text-align:center;">
+    <p style="margin:0 0 8px;font-size:16px;color:#111;">Hi <strong>${name}</strong>,</p>
+    <p style="margin:0 0 28px;font-size:14px;color:#6b7280;line-height:1.6;">Use the code below to verify your email. It expires in 10 minutes.</p>
+    <div style="display:inline-block;background:#f6f9f5;border:1px solid #d1fae5;border-radius:12px;padding:20px 40px;margin-bottom:28px;">
+      <span style="font-size:38px;font-weight:900;letter-spacing:10px;color:#2d5a27;font-family:monospace;">${otp}</span>
+    </div>
+    <p style="margin:0;font-size:12px;color:#9ca3af;">If you didn't request this, you can safely ignore this email.</p>
+  </div>
+  <div style="background:#1e3d1a;padding:18px 32px;text-align:center;">
+    <p style="margin:0;color:rgba(255,255,255,0.4);font-size:11px;">© ${new Date().getFullYear()} YourOrchard · Ramnagar, Uttarakhand</p>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
 export function customerOrderHtml(params: {
   customerName: string;
   items: { label: string; qty: number; price: number }[];
