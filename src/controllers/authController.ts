@@ -51,7 +51,7 @@ export async function sendOtp(req: Request, res: Response) {
 
       const otp = generateOtp();
       await setOtp(lEmail, { otp, type: 'signup', name: name.trim(), phone });
-      await sendMail(lEmail, 'Your YourOrchard verification code', otpEmailHtml(name.trim(), otp));
+      sendMail(lEmail, 'Your YourOrchard verification code', otpEmailHtml(name.trim(), otp));
     } else {
       // Login mode
       if (!existingUser) {
@@ -60,7 +60,7 @@ export async function sendOtp(req: Request, res: Response) {
 
       const otp = generateOtp();
       await setOtp(lEmail, { otp, type: 'login' });
-      await sendMail(lEmail, 'Your YourOrchard sign-in code', otpEmailHtml(existingUser.name, otp));
+      sendMail(lEmail, 'Your YourOrchard sign-in code', otpEmailHtml(existingUser.name, otp));
     }
 
     res.json({ message: 'OTP sent to your email.' });

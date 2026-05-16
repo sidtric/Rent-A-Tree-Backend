@@ -1,15 +1,27 @@
-import nodemailer from 'nodemailer';
+import nodemailer, { Transporter } from 'nodemailer';
+
+let cachedTransporter: Transporter | null = null;
+
+function getTransporter(): Transporter | null {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return null;
+  if (cachedTransporter) return cachedTransporter;
+  cachedTransporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+  });
+  return cachedTransporter;
+}
 
 export async function sendMail(to: string, subject: string, html: string) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+  const transporter = getTransporter();
+  if (!transporter) {
     console.error('[mailer] EMAIL_USER or EMAIL_PASS not set — skipping email to', to);
     return;
   }
   try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-    });
     await transporter.sendMail({
       from: `"YourOrchard" <${process.env.EMAIL_USER}>`,
       to,
