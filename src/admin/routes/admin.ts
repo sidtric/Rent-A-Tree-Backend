@@ -9,6 +9,7 @@ import { adminGetAllReviews, adminDeleteReview } from '../controllers/reviews.ad
 import { adminGetAllUsers, adminSearchUsers, adminUpdateUserRole } from '../controllers/users.admin';
 import { adminGetStats, adminGetPayments } from '../controllers/stats.admin';
 import { adminGetMessages, adminDeleteMessage, adminGetPublicUpdates, adminDeletePublicUpdate } from '../controllers/content.admin';
+import { adminListCoupons, adminCreateCoupon, adminToggleCoupon, adminDeleteCoupon } from '../controllers/coupons.admin';
 import { adminGetSettings, adminUploadHeroMedia, adminDeleteHeroMedia, adminUploadFarmHeroMedia, adminDeleteFarmHeroMedia, adminUploadSaplingMedia, adminDeleteSaplingMedia, adminUploadAdultMedia, adminDeleteAdultMedia, adminUploadGrandMedia, adminDeleteGrandMedia } from '../controllers/settings.admin';
 
 const router = Router();
@@ -49,6 +50,12 @@ router.delete('/messages/:id',            adminDeleteMessage);
 // Public updates
 router.get('/public-updates',             adminGetPublicUpdates);
 router.delete('/public-updates/:id',      adminDeletePublicUpdate);
+
+// Coupons
+router.get('/coupons',              adminListCoupons);
+router.post('/coupons',             adminCreateCoupon);
+router.patch('/coupons/:id/toggle', adminToggleCoupon);
+router.delete('/coupons/:id',       adminDeleteCoupon);
 
 // Site settings
 router.get('/settings',                                                          adminGetSettings);
