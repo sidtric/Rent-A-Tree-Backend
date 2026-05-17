@@ -19,6 +19,7 @@ import webhookRoutes from './routes/webhook';
 import settingsRoutes from './routes/settings';
 import checkoutRoutes from './routes/checkout';
 import pricesRoutes from './routes/prices';
+import couponsRoutes from './routes/coupons';
 
 const app = express();
 
@@ -67,6 +68,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/prices', pricesRoutes);
+app.use('/api/coupons', couponsRoutes);
 
 app.get('/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 

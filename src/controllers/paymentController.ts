@@ -5,6 +5,7 @@ import { AuthRequest } from '../middleware/auth';
 import PendingOrder from '../models/PendingOrder';
 import { BOX_PRICES, PLAN_PRICES, PLAN_FULL_PRICES } from '../constants/prices';
 import Rental from '../models/Rental';
+import Coupon from '../models/Coupon';
 
 function getRazorpay() {
   return new Razorpay({
@@ -15,7 +16,7 @@ function getRazorpay() {
 
 export async function createOrder(req: AuthRequest, res: Response) {
   try {
-    const { type, treeId, variety, quantity = 1, meta } = req.body;
+    const { type, treeId, variety, quantity = 1, meta, couponCode } = req.body;
 
     let amount: number;
     if (type === 'rental') {
@@ -52,6 +53,16 @@ export async function createOrder(req: AuthRequest, res: Response) {
       return res.status(400).json({ message: 'type must be "rental", "box", "cart", or "balance".' });
     }
 
+    // Apply coupon discount if provided
+    let discountPct = 0;
+    if (couponCode && type !== 'balance') {
+      const coupon = await Coupon.findOne({ code: String(couponCode).toUpperCase().trim(), active: true });
+      if (coupon) {
+        discountPct = coupon.discountPct;
+        amount = Math.max(1, Math.round(amount * (1 - discountPct / 100)));
+      }
+    }
+
     const razorpay = getRazorpay();
     const order = await razorpay.orders.create({
       amount: amount * 100,
@@ -78,6 +89,7 @@ export async function createOrder(req: AuthRequest, res: Response) {
       amount: order.amount,
       currency: order.currency,
       key: process.env.RAZORPAY_KEY_ID,
+      discountPct,
     });
   } catch (err) {
     console.error('[createOrder]', err);
