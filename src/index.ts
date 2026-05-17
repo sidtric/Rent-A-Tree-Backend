@@ -22,6 +22,7 @@ import pricesRoutes from './routes/prices';
 
 const app = express();
 
+app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
 // Webhook needs raw body for signature verification — mount before express.json()

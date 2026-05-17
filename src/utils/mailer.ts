@@ -1,36 +1,43 @@
-import nodemailer, { Transporter } from 'nodemailer';
-
-let cachedTransporter: Transporter | null = null;
-
-function getTransporter(): Transporter | null {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return null;
-  if (cachedTransporter) return cachedTransporter;
-  cachedTransporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-    pool: true,
-    maxConnections: 5,
-    maxMessages: 100,
-  });
-  return cachedTransporter;
-}
+import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 export async function sendMail(to: string, subject: string, html: string) {
-  const transporter = getTransporter();
-  if (!transporter) {
-    console.error('[mailer] EMAIL_USER or EMAIL_PASS not set — skipping email to', to);
+  // Use Resend on production (Render blocks SMTP ports)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from: 'YourOrchard <onboarding@resend.dev>',
+        to,
+        subject,
+        html,
+      });
+      console.log('[mailer] sent (resend) to', to, '—', subject);
+    } catch (err: any) {
+      console.error('[mailer] FAILED (resend) to', to, '—', err.message);
+    }
+    return;
+  }
+
+  // Fall back to nodemailer for local dev
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error('[mailer] No email credentials set — skipping email to', to);
     return;
   }
   try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    });
     await transporter.sendMail({
       from: `"YourOrchard" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
     });
-    console.log('[mailer] sent to', to, '—', subject);
+    console.log('[mailer] sent (nodemailer) to', to, '—', subject);
   } catch (err: any) {
-    console.error('[mailer] FAILED to', to, '—', err.message);
+    console.error('[mailer] FAILED (nodemailer) to', to, '—', err.message);
   }
 }
 
