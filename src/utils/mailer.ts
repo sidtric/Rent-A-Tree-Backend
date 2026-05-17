@@ -281,6 +281,13 @@ export function orderStatusHtml(params: { customerName: string; variety: string;
 </div>`;
 }
 
+const VARIETY_LABELS: Record<string, string> = {
+  chausa: 'Chausa Aam', dasheri: 'Dasheri Aam', langra: 'Langra Aam',
+};
+const PLAN_LABELS: Record<string, string> = {
+  sapling: 'Sapling', adult: 'Adult', grand: 'Grand',
+};
+
 export function masterOrderConfirmationEmail(params: {
   orderNumber: string;
   buyer: { name: string; email: string; phone: string };
@@ -293,9 +300,10 @@ export function masterOrderConfirmationEmail(params: {
   hasBox: boolean;
 }) {
   const rows = params.items.map(i => {
+    const v = VARIETY_LABELS[i.variety] || (i.variety.charAt(0).toUpperCase() + i.variety.slice(1));
     const label = i.type === 'tree'
-      ? `${i.variety.charAt(0).toUpperCase() + i.variety.slice(1)} ${i.plan ? i.plan.charAt(0).toUpperCase() + i.plan.slice(1) : ''} Tree Rental (Token)`
-      : `${i.variety.charAt(0).toUpperCase() + i.variety.slice(1)} Mango Box`;
+      ? `${v} ${i.plan ? (PLAN_LABELS[i.plan] || i.plan) : ''} Tree Rental (Token)`
+      : `${v} Mango Box`;
     return `<tr>
       <td style="padding:10px 14px;border-bottom:1px solid #f0f4ee;font-size:14px;color:#374151">${label}</td>
       <td style="padding:10px 14px;border-bottom:1px solid #f0f4ee;text-align:center;font-size:14px;color:#374151">${i.quantity}</td>

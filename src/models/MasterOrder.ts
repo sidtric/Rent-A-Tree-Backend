@@ -19,7 +19,7 @@ export interface IMasterOrder extends Document {
   razorpayPaymentId: string;
   razorpaySignature: string;
   buyer: { name: string; email: string; phone: string };
-  deliveryAddress: { flat: string; street: string; city: string; state: string; pincode: string; full: string };
+  deliveryAddress: { flat: string; street: string; landmark?: string; city: string; state: string; pincode: string; full: string };
   items: IMasterOrderItem[];
   subtotal: number;
   totalAmount: number;
@@ -53,12 +53,13 @@ const schema = new Schema<IMasterOrder>({
     phone: { type: String, required: true },
   },
   deliveryAddress: {
-    flat:    { type: String, required: true },
-    street:  { type: String, required: true },
-    city:    { type: String, required: true },
-    state:   { type: String, required: true },
-    pincode: { type: String, required: true },
-    full:    { type: String, required: true },
+    flat:     { type: String, required: true },
+    street:   { type: String, required: true },
+    landmark: { type: String, default: '' },
+    city:     { type: String, required: true },
+    state:    { type: String, required: true },
+    pincode:  { type: String, required: true },
+    full:     { type: String, required: true },
   },
   items:       { type: [masterOrderItemSchema], required: true },
   subtotal:    { type: Number, required: true },

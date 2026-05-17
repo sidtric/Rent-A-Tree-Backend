@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 export interface IDeliveryAddress {
   flat: string;
   street: string;
+  landmark?: string;
   city: string;
   state: string;
   pincode: string;
@@ -28,11 +29,12 @@ const schema = new Schema<IUser>({
   phone: String,
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   deliveryAddress: {
-    flat:    String,
-    street:  String,
-    city:    String,
-    state:   String,
-    pincode: String,
+    flat:     String,
+    street:   String,
+    landmark: String,
+    city:     String,
+    state:    String,
+    pincode:  String,
   },
 }, { timestamps: true });
 

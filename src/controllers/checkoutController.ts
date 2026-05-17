@@ -6,8 +6,8 @@ import BoxOrder from '../models/BoxOrder';
 import PendingOrder from '../models/PendingOrder';
 import MasterOrder, { IMasterOrderItem, generateOrderNumber } from '../models/MasterOrder';
 import { sendMail, masterOrderConfirmationEmail, ownerMasterOrderNotificationEmail } from '../utils/mailer';
+import { verifyPaymentSignature } from '../utils/verifyRazorpay';
 
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
 const OWNER = process.env.OWNER_EMAIL || 'siddharthfuloria06@gmail.com';
 
 export async function confirmOrder(req: AuthRequest, res: Response) {
@@ -23,12 +23,8 @@ export async function confirmOrder(req: AuthRequest, res: Response) {
     } = req.body;
 
     // --- Verify Razorpay HMAC signature ---
-    const expectedSig = crypto
-      .createHmac('sha256', RAZORPAY_KEY_SECRET)
-      .update(razorpayOrderId + '|' + razorpayPaymentId)
-      .digest('hex');
-
-    if (expectedSig !== razorpaySignature) {
+    if (!verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature)) {
+      console.error('[confirmOrder] Signature mismatch — orderId:', razorpayOrderId, 'paymentId:', razorpayPaymentId);
       return res.status(400).json({ message: 'Invalid payment signature.' });
     }
 
@@ -40,7 +36,8 @@ export async function confirmOrder(req: AuthRequest, res: Response) {
 
     // --- Compute line totals ---
     const season = String(new Date().getFullYear());
-    const addrFull = `${deliveryAddress.flat}, ${deliveryAddress.street}, ${deliveryAddress.city}, ${deliveryAddress.state} – ${deliveryAddress.pincode}`;
+    const landmarkPart = deliveryAddress.landmark ? `, ${deliveryAddress.landmark}` : '';
+    const addrFull = `${deliveryAddress.flat}, ${deliveryAddress.street}${landmarkPart}, ${deliveryAddress.city}, ${deliveryAddress.state} – ${deliveryAddress.pincode}`;
 
     let totalAmount = 0;
     const masterItems: IMasterOrderItem[] = [];
@@ -123,12 +120,13 @@ export async function confirmOrder(req: AuthRequest, res: Response) {
       razorpaySignature,
       buyer,
       deliveryAddress: {
-        flat: deliveryAddress.flat,
-        street: deliveryAddress.street,
-        city: deliveryAddress.city,
-        state: deliveryAddress.state,
-        pincode: deliveryAddress.pincode,
-        full: addrFull,
+        flat:     deliveryAddress.flat,
+        street:   deliveryAddress.street,
+        landmark: deliveryAddress.landmark || '',
+        city:     deliveryAddress.city,
+        state:    deliveryAddress.state,
+        pincode:  deliveryAddress.pincode,
+        full:     addrFull,
       },
       items: masterItems,
       subtotal: totalAmount,

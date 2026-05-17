@@ -16,7 +16,7 @@ export interface IPendingOrder extends Document {
   userPhone: string;
   deliveryAddress: string;
   deliveryAddressStructured?: {
-    flat: string; street: string; city: string; state: string; pincode: string;
+    flat: string; street: string; landmark?: string; city: string; state: string; pincode: string;
   };
   items: IRichItem[];
   notes?: string;
@@ -31,7 +31,7 @@ const schema = new Schema<IPendingOrder>({
   userPhone:       { type: String, default: '' },
   deliveryAddress: { type: String, required: true },
   deliveryAddressStructured: {
-    flat: String, street: String, city: String, state: String, pincode: String,
+    flat: String, street: String, landmark: String, city: String, state: String, pincode: String,
   },
   items: [{
     type:       { type: String },

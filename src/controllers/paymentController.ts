@@ -104,12 +104,9 @@ export async function verifyPayment(req: AuthRequest, res: Response) {
       return res.status(400).json({ message: 'Missing payment fields.' });
     }
 
-    const expected = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
-      .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-      .digest('hex');
-
-    if (expected !== razorpaySignature) {
+    const { verifyPaymentSignature } = await import('../utils/verifyRazorpay');
+    if (!verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature)) {
+      console.error('[verifyPayment] Signature mismatch — key secret set:', !!process.env.RAZORPAY_KEY_SECRET?.trim());
       return res.status(400).json({ message: 'Invalid payment signature.' });
     }
 
