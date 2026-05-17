@@ -49,7 +49,8 @@ export async function sendOtp(req: Request, res: Response) {
       }
       if (!phone) return res.status(400).json({ message: 'Phone number is required.' });
 
-      const otp = generateOtp();
+      const existing = await getOtp(lEmail);
+      const otp = (existing && existing.type === 'signup') ? existing.otp : generateOtp();
       await setOtp(lEmail, { otp, type: 'signup', name: name.trim(), phone });
       sendMail(lEmail, 'Your YourOrchard verification code', otpEmailHtml(name.trim(), otp));
     } else {
@@ -58,7 +59,8 @@ export async function sendOtp(req: Request, res: Response) {
         return res.status(404).json({ message: 'No account found. Please sign up first.' });
       }
 
-      const otp = generateOtp();
+      const existing = await getOtp(lEmail);
+      const otp = (existing && existing.type === 'login') ? existing.otp : generateOtp();
       await setOtp(lEmail, { otp, type: 'login' });
       sendMail(lEmail, 'Your YourOrchard sign-in code', otpEmailHtml(existingUser.name, otp));
     }
