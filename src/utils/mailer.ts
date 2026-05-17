@@ -7,7 +7,7 @@ export async function sendMail(to: string, subject: string, html: string) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: 'YourOrchard <onboarding@resend.dev>',
+        from: 'YourOrchard <hello@yourorchard.in>',
         to,
         subject,
         html,
